@@ -1,0 +1,47 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  transition: border-color 0.2s;
+}
+
+.active {
+  border-color: var(--accent-primary);
+  background: var(--bg-elevated);
+}
+
+.disconnected { opacity: 0.4; }
+
+.name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.you {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+
+.score {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--accent-gold);
+  min-width: 36px;
+  text-align: right;
+}

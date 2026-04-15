@@ -1,0 +1,37 @@
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.cell {
+  width: 38px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  border-radius: var(--radius-sm);
+  border-bottom: 3px solid var(--border);
+  transition: background 0.15s;
+}
+
+.revealed {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border-bottom-color: var(--accent-success);
+  animation: letterReveal 0.35s ease-out both;
+}
+
+.blank {
+  color: transparent;
+  background: var(--bg-card);
+}
+
+@keyframes letterReveal {
+  0%   { transform: scale(0.5) rotateY(90deg); opacity: 0; }
+  60%  { transform: scale(1.2) rotateY(0deg);  opacity: 1; }
+  100% { transform: scale(1)   rotateY(0deg);  opacity: 1; }
+}

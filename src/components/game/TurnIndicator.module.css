@@ -1,0 +1,28 @@
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 8px 20px;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.myTurn {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #fff;
+  box-shadow: var(--shadow-glow);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 16px #7c3aed66; }
+  50%       { box-shadow: 0 0 32px #7c3aedcc; }
+}
+
+.text { white-space: nowrap; }

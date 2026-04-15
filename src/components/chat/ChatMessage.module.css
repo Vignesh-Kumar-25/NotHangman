@@ -1,0 +1,40 @@
+.msg {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  max-width: 85%;
+}
+
+.me {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.avatar { flex-shrink: 0; }
+
+.bubble {
+  background: var(--bg-elevated);
+  border-radius: 14px 14px 14px 4px;
+  padding: 7px 12px;
+  max-width: 100%;
+}
+
+.me .bubble {
+  background: var(--accent-primary);
+  border-radius: 14px 14px 4px 14px;
+}
+
+.author {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--accent-secondary);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.text {
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  word-break: break-word;
+  line-height: 1.4;
+}

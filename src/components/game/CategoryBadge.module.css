@@ -1,0 +1,10 @@
+.badge {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 4px 14px;
+  text-transform: capitalize;
+}

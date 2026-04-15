@@ -1,0 +1,30 @@
+.picker {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.option {
+  background: var(--bg-card);
+  border: 3px solid transparent;
+  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.option:hover {
+  border-color: var(--accent-primary);
+  transform: scale(1.08);
+}
+
+.selected {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-primary)44;
+  transform: scale(1.08);
+}

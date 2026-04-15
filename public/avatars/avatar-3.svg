@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Alien -->
+  <!-- Head shape -->
+  <ellipse cx="32" cy="30" rx="20" ry="24" fill="#22c55e" stroke="#15803d" stroke-width="1.5"/>
+  <!-- Antennae -->
+  <line x1="24" y1="8" x2="18" y2="2" stroke="#15803d" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="17" cy="1" r="3" fill="#4ade80"/>
+  <line x1="40" y1="8" x2="46" y2="2" stroke="#15803d" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="47" cy="1" r="3" fill="#4ade80"/>
+  <!-- Eyes -->
+  <ellipse cx="24" cy="28" rx="7" ry="9" fill="#0f172a"/>
+  <ellipse cx="40" cy="28" rx="7" ry="9" fill="#0f172a"/>
+  <!-- Iris -->
+  <ellipse cx="24" cy="28" rx="4" ry="5" fill="#7c3aed"/>
+  <ellipse cx="40" cy="28" rx="4" ry="5" fill="#7c3aed"/>
+  <!-- Shine -->
+  <circle cx="26" cy="25" r="2" fill="white" opacity="0.7"/>
+  <circle cx="42" cy="25" r="2" fill="white" opacity="0.7"/>
+  <!-- Mouth -->
+  <path d="M24 44 Q32 50 40 44" stroke="#15803d" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>

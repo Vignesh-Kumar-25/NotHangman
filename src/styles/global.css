@@ -1,0 +1,94 @@
+/* ── Reset ────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── CSS Variables (dark cartoon palette) ─────────────── */
+:root {
+  /* Background shades */
+  --bg-base:        #0f0f1a;
+  --bg-surface:     #1a1a2e;
+  --bg-elevated:    #16213e;
+  --bg-card:        #1f2547;
+
+  /* Accent colours */
+  --accent-primary:  #7c3aed;   /* purple */
+  --accent-secondary:#06b6d4;   /* cyan */
+  --accent-success:  #22c55e;   /* green */
+  --accent-danger:   #ef4444;   /* red */
+  --accent-warning:  #f59e0b;   /* amber */
+  --accent-gold:     #fbbf24;   /* gold – winner */
+
+  /* Text */
+  --text-primary:   #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted:     #475569;
+
+  /* Borders */
+  --border:         #2d3a5a;
+  --border-accent:  #7c3aed44;
+
+  /* Hangman stroke */
+  --hangman-stroke: #f1f5f9;
+
+  /* Fonts */
+  --font-display:   'Fredoka One', cursive;
+  --font-body:      'Nunito', sans-serif;
+
+  /* Sizes */
+  --radius-sm:  6px;
+  --radius-md:  12px;
+  --radius-lg:  20px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm:  0 1px 3px #0004;
+  --shadow-md:  0 4px 16px #0006;
+  --shadow-glow: 0 0 20px #7c3aed55;
+}
+
+/* ── Base ─────────────────────────────────────────────── */
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+input, textarea {
+  font-family: var(--font-body);
+}
+
+a {
+  color: var(--accent-secondary);
+  text-decoration: none;
+}
+
+/* ── Utility classes ──────────────────────────────────── */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.text-center { text-align: center; }
+.w-full { width: 100%; }

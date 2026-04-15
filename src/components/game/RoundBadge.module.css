@@ -1,0 +1,10 @@
+.badge {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.badge strong {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}

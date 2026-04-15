@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create *)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(yes y *)",
+      "Bash(npx --yes create-vite@latest . --template react)",
+      "Bash(npm install *)",
+      "Bash(npm run *)"
+    ]
+  }
+}
