@@ -13,6 +13,10 @@ export function useRoom(roomCode) {
       if (!data) {
         setNotFound(true)
       } else {
+        // Firebase RTDB may return a single-element array as {0: uid} — normalise it
+        if (data.playerOrder && !Array.isArray(data.playerOrder)) {
+          data.playerOrder = Object.values(data.playerOrder)
+        }
         setRoom(data)
         setNotFound(false)
       }
