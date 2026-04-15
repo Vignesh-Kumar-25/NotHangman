@@ -25,6 +25,7 @@ import { GAME_STATES } from '../constants/gameStates'
 // ── Room helpers ────────────────────────────────────────
 
 export async function createRoom(uid, username, avatarId) {
+  if (!uid) throw new Error('Not signed in. Enable Anonymous Authentication in your Firebase console → Authentication → Sign-in method → Anonymous.')
   let roomCode
   let attempts = 0
   // Ensure unique code
@@ -67,6 +68,7 @@ export async function createRoom(uid, username, avatarId) {
 }
 
 export async function joinRoom(roomCode, uid, username, avatarId) {
+  if (!uid) throw new Error('Not signed in. Enable Anonymous Authentication in your Firebase console → Authentication → Sign-in method → Anonymous.')
   const roomRef = ref(db, `rooms/${roomCode}`)
   const snap = await get(roomRef)
 

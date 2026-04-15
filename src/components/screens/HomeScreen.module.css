@@ -8,6 +8,27 @@
   gap: 40px;
 }
 
+.authError {
+  background: #ef444422;
+  border: 2px solid var(--accent-danger);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  max-width: 480px;
+  width: 100%;
+  text-align: left;
+}
+.authError strong {
+  color: var(--accent-danger);
+  font-size: 0.95rem;
+  display: block;
+  margin-bottom: 6px;
+}
+.authError p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
 .hero {
   text-align: center;
 }

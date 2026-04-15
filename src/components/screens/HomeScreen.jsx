@@ -6,7 +6,7 @@ import JoinRoomForm from '../lobby/JoinRoomForm'
 import styles from './HomeScreen.module.css'
 
 export default function HomeScreen() {
-  const { uid } = useAuth()
+  const { uid, authError } = useAuth()
   const navigate = useNavigate()
   const [view, setView] = useState('home') // 'home' | 'create' | 'join'
 
@@ -32,6 +32,13 @@ export default function HomeScreen() {
 
   return (
     <div className={styles.page}>
+      {authError && (
+        <div className={styles.authError}>
+          <strong>Firebase setup required</strong>
+          <p>{authError}</p>
+        </div>
+      )}
+
       <div className={styles.hero}>
         <h1 className={styles.title}>wannaBE<br />hangman</h1>
         <p className={styles.subtitle}>
