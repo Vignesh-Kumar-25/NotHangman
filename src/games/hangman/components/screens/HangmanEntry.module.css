@@ -1,0 +1,131 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  gap: 32px;
+  position: relative;
+}
+
+.backBtn {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.backBtn:hover {
+  color: var(--accent-secondary);
+}
+
+.hero {
+  text-align: center;
+}
+
+.icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  line-height: 1;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 12px;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  max-width: 340px;
+  margin-inline: auto;
+}
+
+.actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btnCreate,
+.btnJoin {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 1.1rem;
+  padding: 14px 36px;
+  border-radius: var(--radius-lg);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.btnCreate {
+  background: var(--accent-primary);
+  color: #fff;
+  box-shadow: 0 4px 20px #7c3aed66;
+}
+.btnCreate:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px #7c3aed88;
+}
+
+.btnJoin {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 2px solid var(--border);
+}
+.btnJoin:hover {
+  border-color: var(--accent-secondary);
+  color: var(--accent-secondary);
+  transform: translateY(-2px);
+}
+
+.rules {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 32px;
+  max-width: 400px;
+  width: 100%;
+}
+
+.rules h2 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--accent-secondary);
+  margin-bottom: 12px;
+}
+
+.rules ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rules li {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  padding-left: 20px;
+  position: relative;
+}
+
+.rules li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--accent-primary);
+}

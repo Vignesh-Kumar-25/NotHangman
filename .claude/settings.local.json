@@ -6,7 +6,8 @@
       "Bash(yes y *)",
       "Bash(npx --yes create-vite@latest . --template react)",
       "Bash(npm install *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(npx vite *)"
     ]
   }
 }

@@ -1,7 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import HomeScreen from './components/screens/HomeScreen'
-import RoomRoute from './components/screens/RoomRoute'
+import HangmanEntry from './games/hangman/components/screens/HangmanEntry'
+import RoomRoute from './games/hangman/components/screens/RoomRoute'
 import LoadingSpinner from './components/shared/LoadingSpinner'
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomeScreen />} />
+      <Route path="/hangman" element={<HangmanEntry />} />
       <Route path="/room/:roomCode" element={<RoomRoute uid={uid} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

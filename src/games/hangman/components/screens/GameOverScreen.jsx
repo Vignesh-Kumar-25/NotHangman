@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
-import { resetGame } from '../../firebase/db'
+import { resetGame } from '../../db'
 import { useGameState } from '../../hooks/useGameState'
-import Avatar from '../shared/Avatar'
+import Avatar from '@/components/shared/Avatar'
 import styles from './GameOverScreen.module.css'
 
 export default function GameOverScreen({ room, roomCode, uid }) {

@@ -1,4 +1,4 @@
-import Avatar from '../shared/Avatar'
+import Avatar from '@/components/shared/Avatar'
 import styles from './ScorePanel.module.css'
 
 export default function ScorePanel({ players, playerOrder, currentTurnUid, uid }) {

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { startGame, leaveRoom, setRoomNumRounds } from '../../firebase/db'
+import { startGame, leaveRoom, setRoomNumRounds } from '../../db'
 import { useGameState } from '../../hooks/useGameState'
 import RoomCodeDisplay from '../lobby/RoomCodeDisplay'
 import PlayerSlot from '../lobby/PlayerSlot'

@@ -1,4 +1,4 @@
-import Avatar from '../shared/Avatar'
+import Avatar from '@/components/shared/Avatar'
 import styles from './TurnIndicator.module.css'
 
 export default function TurnIndicator({ currentPlayer, isMyTurn }) {

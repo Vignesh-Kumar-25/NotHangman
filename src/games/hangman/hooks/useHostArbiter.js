@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { passTurn, advanceRound, beginPlaying, promoteHost } from '../firebase/db'
+import { passTurn, advanceRound, beginPlaying, promoteHost } from '../db'
 import { GAME_STATES } from '../constants/gameStates'
 import { ROUND_START_DELAY, ROUND_END_DELAY } from '../constants/gameConfig'
 

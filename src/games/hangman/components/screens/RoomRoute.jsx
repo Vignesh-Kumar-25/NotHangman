@@ -1,10 +1,10 @@
 import { useParams, Navigate } from 'react-router-dom'
-import { useRoom } from '../../hooks/useRoom'
+import { useRoom } from '@/hooks/useRoom'
 import { GAME_STATES } from '../../constants/gameStates'
 import LobbyScreen from './LobbyScreen'
 import GameScreen from './GameScreen'
 import GameOverScreen from './GameOverScreen'
-import LoadingSpinner from '../shared/LoadingSpinner'
+import LoadingSpinner from '@/components/shared/LoadingSpinner'
 import styles from './RoomRoute.module.css'
 
 export default function RoomRoute({ uid }) {

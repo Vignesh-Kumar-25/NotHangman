@@ -1,34 +1,29 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import CreateRoomForm from '../lobby/CreateRoomForm'
-import JoinRoomForm from '../lobby/JoinRoomForm'
 import styles from './HomeScreen.module.css'
 
+const GAMES = [
+  {
+    id: 'hangman',
+    name: 'Hangman',
+    description: 'Guess the word letter by letter. Correct guess keeps your turn!',
+    icon: '🔤',
+    path: '/hangman',
+    available: true,
+  },
+  {
+    id: 'coming-soon',
+    name: 'Coming Soon',
+    description: 'More party games are on the way...',
+    icon: '🎲',
+    path: null,
+    available: false,
+  },
+]
+
 export default function HomeScreen() {
-  const { uid, authError } = useAuth()
+  const { authError } = useAuth()
   const navigate = useNavigate()
-  const [view, setView] = useState('home') // 'home' | 'create' | 'join'
-
-  function handleRoomReady(roomCode) {
-    navigate(`/room/${roomCode}`)
-  }
-
-  if (view === 'create') {
-    return (
-      <div className={styles.page}>
-        <CreateRoomForm uid={uid} onBack={() => setView('home')} onCreated={handleRoomReady} />
-      </div>
-    )
-  }
-
-  if (view === 'join') {
-    return (
-      <div className={styles.page}>
-        <JoinRoomForm uid={uid} onBack={() => setView('home')} onJoined={handleRoomReady} />
-      </div>
-    )
-  }
 
   return (
     <div className={styles.page}>
@@ -40,28 +35,27 @@ export default function HomeScreen() {
       )}
 
       <div className={styles.hero}>
-        <h1 className={styles.title}>wannaBE<br />hangman</h1>
+        <h1 className={styles.title}>Party<br />Games</h1>
         <p className={styles.subtitle}>
-          The hangman game where your teammates choose your fate
+          Pick a game and play with friends online
         </p>
-        <div className={styles.actions}>
-          <button className={styles.btnCreate} onClick={() => setView('create')}>
-            Create Room
-          </button>
-          <button className={styles.btnJoin} onClick={() => setView('join')}>
-            Join Room
-          </button>
-        </div>
       </div>
 
-      <div className={styles.rules}>
-        <h2>How to play</h2>
-        <ul>
-          <li>Guess a letter correctly → keep your turn</li>
-          <li>Guess wrong → pass to the next player</li>
-          <li>Guess the full word to score big</li>
-          <li>Solve a round to claim the bonus!</li>
-        </ul>
+      <div className={styles.grid}>
+        {GAMES.map((game) => (
+          <button
+            key={game.id}
+            className={[styles.card, !game.available ? styles.cardDisabled : ''].join(' ')}
+            onClick={() => game.available && navigate(game.path)}
+            disabled={!game.available}
+          >
+            <span className={styles.cardIcon}>{game.icon}</span>
+            <h2 className={styles.cardName}>{game.name}</h2>
+            <p className={styles.cardDesc}>{game.description}</p>
+            {game.available && <span className={styles.cardAction}>Play</span>}
+            {!game.available && <span className={styles.cardBadge}>Soon</span>}
+          </button>
+        ))}
       </div>
     </div>
   )

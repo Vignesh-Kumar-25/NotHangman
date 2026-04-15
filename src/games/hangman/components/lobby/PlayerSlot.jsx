@@ -1,4 +1,4 @@
-import Avatar from '../shared/Avatar'
+import Avatar from '@/components/shared/Avatar'
 import styles from './PlayerSlot.module.css'
 
 export default function PlayerSlot({ player, isHost, isMe }) {
