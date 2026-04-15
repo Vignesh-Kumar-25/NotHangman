@@ -19,6 +19,7 @@ import {
   POINTS_CORRECT_LETTER,
   POINTS_CORRECT_WORD,
   POINTS_SOLVE_BONUS,
+  DEFAULT_NUM_ROUNDS,
 } from '../constants/gameConfig'
 import { GAME_STATES } from '../constants/gameStates'
 
@@ -104,30 +105,62 @@ export async function leaveRoom(roomCode, uid) {
   const updates = {}
   updates[`players/${uid}/connected`] = false
 
-  // If host leaving while in lobby, transfer host to next player
-  if (room.meta.hostUid === uid && room.meta.status === 'lobby') {
-    const newOrder = (room.playerOrder || []).filter((id) => id !== uid)
-    if (newOrder.length > 0) {
+  const playerOrder = room.playerOrder || []
+  const connectedOthers = playerOrder.filter(
+    (id) => id !== uid && room.players?.[id]?.connected !== false
+  )
+
+  if (room.meta.status === 'lobby') {
+    // Remove from order and transfer host if needed
+    const newOrder = playerOrder.filter((id) => id !== uid)
+    if (room.meta.hostUid === uid && newOrder.length > 0) {
       updates['meta/hostUid'] = newOrder[0]
       updates['playerOrder'] = newOrder
+    }
+  } else if (room.meta.status === 'in_progress') {
+    const game = room.game
+    // If it's this player's turn, pass to next connected player
+    if (game?.state === GAME_STATES.PLAYING && game?.currentTurnUid === uid) {
+      if (connectedOthers.length > 0) {
+        const currentIdx = playerOrder.indexOf(uid)
+        let nextUid = connectedOthers[0]
+        for (const id of connectedOthers) {
+          if (playerOrder.indexOf(id) > currentIdx) {
+            nextUid = id
+            break
+          }
+        }
+        updates['game/currentTurnUid'] = nextUid
+        updates['game/turnStartTime'] = serverTimestamp()
+      }
+    }
+    // Transfer host if needed
+    if (room.meta.hostUid === uid && connectedOthers.length > 0) {
+      updates['meta/hostUid'] = connectedOthers[0]
     }
   }
 
   await update(roomRef, updates)
 }
 
+export async function setRoomNumRounds(roomCode, numRounds) {
+  await update(ref(db, `rooms/${roomCode}/meta`), { numRounds })
+}
+
 // ── Game start ──────────────────────────────────────────
 
-export async function startGame(roomCode, playerOrder) {
+export async function startGame(roomCode, playerOrder, numRounds = DEFAULT_NUM_ROUNDS) {
   const { word, category } = pickWordForRound(0)
-  const totalRounds = playerOrder.length * 2
+  const totalRounds = numRounds * playerOrder.length
 
   const updates = {
     'meta/status': 'in_progress',
+    'meta/numRounds': numRounds,
     game: {
       state: GAME_STATES.ROUND_START,
       round: 1,
       totalRounds,
+      numRounds,
       currentTurnUid: playerOrder[0],
       turnStartTime: serverTimestamp(),
       word,
@@ -173,9 +206,9 @@ export async function guessLetter(roomCode, uid, letterRaw, game, playerOrder, p
       updates['game/wordSolved'] = true
       updates['game/solverUid'] = uid
       updates['game/state'] = GAME_STATES.ROUND_END
-      // Reveal all letters for the end display
+      // Reveal all letters for the end display (skip spaces — invalid Firebase keys)
       for (const char of game.word) {
-        updates[`game/guessedLetters/${char}`] = true
+        if (char !== ' ') updates[`game/guessedLetters/${char}`] = true
       }
     } else {
       updates[`players/${uid}/score`] = currentScore + POINTS_CORRECT_LETTER
@@ -206,9 +239,9 @@ export async function guessWord(roomCode, uid, wordGuessRaw, game, playerOrder, 
     updates['game/wordSolved'] = true
     updates['game/solverUid'] = uid
     updates['game/state'] = GAME_STATES.ROUND_END
-    // Reveal all letters
+    // Reveal all letters (skip spaces — invalid Firebase keys)
     for (const char of game.word) {
-      updates[`game/guessedLetters/${char}`] = true
+      if (char !== ' ') updates[`game/guessedLetters/${char}`] = true
     }
   } else {
     updates['game/wrongGuessCount'] = (game.wrongGuessCount || 0) + 1
@@ -276,6 +309,7 @@ export async function advanceRound(roomCode, game, playerOrder, players) {
       state: GAME_STATES.ROUND_START,
       round: nextRound,
       totalRounds: game.totalRounds,
+      numRounds: game.numRounds,
       currentTurnUid: startingPlayer,
       turnStartTime: serverTimestamp(),
       word,
@@ -298,7 +332,7 @@ export async function promoteHost(roomCode, newHostUid) {
 
 // ── Play Again (reset) ──────────────────────────────────
 
-export async function resetGame(roomCode, playerOrder, players) {
+export async function resetGame(roomCode, playerOrder, players, numRounds = DEFAULT_NUM_ROUNDS) {
   // Reset all player scores
   const playerUpdates = {}
   for (const uid of playerOrder) {
@@ -306,16 +340,18 @@ export async function resetGame(roomCode, playerOrder, players) {
   }
 
   const { word, category } = pickWordForRound(0)
-  const totalRounds = playerOrder.length * 2
+  const totalRounds = numRounds * playerOrder.length
 
   await update(ref(db, `rooms/${roomCode}`), {
     ...playerUpdates,
     roundHistory: null,
     'meta/status': 'in_progress',
+    'meta/numRounds': numRounds,
     game: {
       state: GAME_STATES.ROUND_START,
       round: 1,
       totalRounds,
+      numRounds,
       currentTurnUid: playerOrder[0],
       turnStartTime: serverTimestamp(),
       word,

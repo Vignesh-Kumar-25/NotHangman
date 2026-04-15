@@ -14,16 +14,18 @@ export function pickWordForRound(roundIndex) {
   return pickWord(cat)
 }
 
-// Returns array of {char, revealed} for each character in the word
+// Returns array of {char, revealed, isSpace} for each character in the word
 export function maskWord(word, guessedLetters = {}) {
   return word.split('').map((char) => ({
     char,
-    revealed: guessedLetters[char] === true,
+    isSpace: char === ' ',
+    revealed: char === ' ' || guessedLetters[char] === true,
   }))
 }
 
 export function isWordSolved(word, guessedLetters = {}) {
-  return word.split('').every((char) => guessedLetters[char] === true)
+  // Spaces are always "solved" — only check letter characters
+  return word.split('').every((char) => char === ' ' || guessedLetters[char] === true)
 }
 
 export function normalizeGuess(input) {

@@ -1,10 +1,12 @@
-import { useCallback, useRef } from 'react'
-import { guessLetter, guessWord } from '../../firebase/db'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { guessLetter, guessWord, leaveRoom } from '../../firebase/db'
 import { useGameState } from '../../hooks/useGameState'
 import { useTimer } from '../../hooks/useTimer'
 import { useServerTimeOffset } from '../../hooks/useServerTimeOffset'
 import { useHostArbiter } from '../../hooks/useHostArbiter'
 import { GAME_STATES } from '../../constants/gameStates'
+import { playCorrect, playWrong, startBgMusic, stopBgMusic, isBgMusicPlaying } from '../../utils/soundManager'
 import HangmanCanvas from '../game/HangmanCanvas'
 import WordDisplay from '../game/WordDisplay'
 import LetterGrid from '../game/LetterGrid'
@@ -19,8 +21,9 @@ import ChatPanel from '../chat/ChatPanel'
 import styles from './GameScreen.module.css'
 
 export default function GameScreen({ room, roomCode, uid }) {
+  const navigate = useNavigate()
   const {
-    game, players, playerOrder, isHost, isMyTurn, me, maskedWord,
+    game, players, playerOrder, isHost, isMyTurn, me, maskedWord, meta,
   } = useGameState(room, uid)
 
   const serverTimeOffset = useServerTimeOffset()
@@ -29,12 +32,38 @@ export default function GameScreen({ room, roomCode, uid }) {
   useHostArbiter({ isHost, room, roomCode, timeLeft, uid })
 
   const submittingRef = useRef(false)
+  const [musicOn, setMusicOn] = useState(false)
 
+  // ── Background music toggle ────────────────────────────
+  function toggleMusic() {
+    if (isBgMusicPlaying()) {
+      stopBgMusic()
+      setMusicOn(false)
+    } else {
+      startBgMusic()
+      setMusicOn(true)
+    }
+  }
+
+  // Stop music when unmounting
+  useEffect(() => {
+    return () => stopBgMusic()
+  }, [])
+
+  // ── Letter guess ───────────────────────────────────────
   const handleLetterGuess = useCallback(async (letter) => {
     if (!isMyTurn || submittingRef.current) return
+    const normalized = letter.toUpperCase()
+    if (!/^[A-Z]$/.test(normalized)) return
+    if (game.guessedLetters?.[normalized] !== undefined) return
+
+    const inWord = game.word.includes(normalized)
+    if (inWord) playCorrect()
+    else playWrong()
+
     submittingRef.current = true
     try {
-      await guessLetter(roomCode, uid, letter, game, playerOrder, players)
+      await guessLetter(roomCode, uid, normalized, game, playerOrder, players)
     } finally {
       submittingRef.current = false
     }
@@ -50,10 +79,33 @@ export default function GameScreen({ room, roomCode, uid }) {
     }
   }, [isMyTurn, roomCode, uid, game, playerOrder, players])
 
+  // ── Keyboard input ─────────────────────────────────────
+  useEffect(() => {
+    if (!isMyTurn) return
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+      const key = e.key.toUpperCase()
+      if (/^[A-Z]$/.test(key)) {
+        e.preventDefault()
+        handleLetterGuess(key)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isMyTurn, handleLetterGuess])
+
+  // ── Leave room ─────────────────────────────────────────
+  async function handleLeave() {
+    stopBgMusic()
+    await leaveRoom(roomCode, uid)
+    navigate('/')
+  }
+
   if (!game || game.state === GAME_STATES.ROUND_START) {
     return (
       <div className={styles.countdown}>
-        <h2>Round {game?.round}</h2>
+        <h2>Round {Math.ceil((game?.round ?? 1) / Math.max(1, playerOrder.length))}</h2>
         <p>Category: <strong>{game?.category}</strong></p>
         <p>Starting soon…</p>
       </div>
@@ -73,12 +125,28 @@ export default function GameScreen({ room, roomCode, uid }) {
           currentTurnUid={game.currentTurnUid}
           uid={uid}
         />
+        <div className={styles.sidebarActions}>
+          <button
+            className={styles.musicBtn}
+            onClick={toggleMusic}
+            title={musicOn ? 'Mute music' : 'Play music'}
+          >
+            {musicOn ? '🔊' : '🔇'}
+          </button>
+          <button className={styles.leaveBtn} onClick={handleLeave}>
+            Leave
+          </button>
+        </div>
       </aside>
 
       {/* Main game area */}
       <main className={styles.main}>
         <div className={styles.topBar}>
-          <RoundBadge round={game.round} totalRounds={game.totalRounds} />
+          <RoundBadge
+            round={game.round}
+            numRounds={game.numRounds ?? meta?.numRounds ?? 2}
+            playerCount={playerOrder.length}
+          />
           <CategoryBadge category={game.category} />
         </div>
 
@@ -92,6 +160,9 @@ export default function GameScreen({ room, roomCode, uid }) {
         <WordDisplay maskedWord={maskedWord} />
 
         <div className={styles.inputArea}>
+          {isMyTurn && game.state === GAME_STATES.PLAYING && (
+            <p className={styles.keyboardHint}>Press a letter key or click below</p>
+          )}
           <LetterGrid
             guessedLetters={game.guessedLetters || {}}
             onGuess={handleLetterGuess}

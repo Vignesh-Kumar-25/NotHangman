@@ -4,7 +4,7 @@ import { GAME_STATES } from '../constants/gameStates'
 import { ROUND_START_DELAY, ROUND_END_DELAY } from '../constants/gameConfig'
 
 export function useHostArbiter({ isHost, room, roomCode, timeLeft, uid }) {
-  const lastHandledTurnStart = useRef(null)
+  const passTurnFiredRef = useRef(false)
   const advancedRound = useRef(null)
   const promotedRef = useRef(false)
 
@@ -51,11 +51,17 @@ export function useHostArbiter({ isHost, room, roomCode, timeLeft, uid }) {
   useEffect(() => {
     if (!isHost || !game) return
     if (game.state !== GAME_STATES.PLAYING) return
-    if (timeLeft > 0) return
 
-    const turnStart = game.turnStartTime
-    if (lastHandledTurnStart.current === turnStart) return
-    lastHandledTurnStart.current = turnStart
+    // When timeLeft goes positive again (new turn started), release the lock
+    if (timeLeft > 0) {
+      passTurnFiredRef.current = false
+      return
+    }
+
+    // Prevent double-fire: Firebase updating turnStartTime causes this effect
+    // to re-run while timeLeft may briefly still be 0
+    if (passTurnFiredRef.current) return
+    passTurnFiredRef.current = true
 
     passTurn(roomCode, game, playerOrder).catch(console.error)
   }, [isHost, timeLeft, game?.state, game?.turnStartTime, roomCode, playerOrder])

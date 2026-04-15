@@ -6,7 +6,7 @@ import styles from './GameOverScreen.module.css'
 
 export default function GameOverScreen({ room, roomCode, uid }) {
   const navigate = useNavigate()
-  const { players, playerOrder, isHost } = useGameState(room, uid)
+  const { players, playerOrder, isHost, meta } = useGameState(room, uid)
 
   const sorted = [...playerOrder]
     .filter((id) => players[id])
@@ -15,7 +15,7 @@ export default function GameOverScreen({ room, roomCode, uid }) {
   const winner = sorted[0]
 
   async function handlePlayAgain() {
-    await resetGame(roomCode, playerOrder, players)
+    await resetGame(roomCode, playerOrder, players, meta?.numRounds ?? 2)
   }
 
   function handleLeave() {

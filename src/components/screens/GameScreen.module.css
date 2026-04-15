@@ -46,6 +46,44 @@
   align-items: center;
 }
 
+.sidebarActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.musicBtn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 1.2rem;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+  width: 100%;
+}
+.musicBtn:hover { background: var(--bg-elevated); }
+
+.leaveBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.15s;
+  text-align: center;
+}
+.leaveBtn:hover { color: var(--accent-danger); }
+
+.keyboardHint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
 .countdown {
   display: flex;
   flex-direction: column;

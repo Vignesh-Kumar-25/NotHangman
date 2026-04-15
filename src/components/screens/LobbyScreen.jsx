@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { startGame, leaveRoom, promoteHost } from '../../firebase/db'
+import { startGame, leaveRoom, setRoomNumRounds } from '../../firebase/db'
 import { useGameState } from '../../hooks/useGameState'
 import RoomCodeDisplay from '../lobby/RoomCodeDisplay'
 import PlayerSlot from '../lobby/PlayerSlot'
-import { MIN_PLAYERS, MAX_PLAYERS } from '../../constants/gameConfig'
+import { MIN_PLAYERS, MAX_PLAYERS, DEFAULT_NUM_ROUNDS, MAX_NUM_ROUNDS } from '../../constants/gameConfig'
 import styles from './LobbyScreen.module.css'
 
 export default function LobbyScreen({ room, roomCode, uid }) {
@@ -14,6 +14,7 @@ export default function LobbyScreen({ room, roomCode, uid }) {
   const { players, playerOrder, meta, isHost } = useGameState(room, uid)
 
   const connectedCount = playerOrder.filter((id) => players[id]?.connected !== false).length
+  const numRounds = meta?.numRounds ?? DEFAULT_NUM_ROUNDS
 
   async function handleStart() {
     if (connectedCount < MIN_PLAYERS) {
@@ -23,7 +24,7 @@ export default function LobbyScreen({ room, roomCode, uid }) {
     setStarting(true)
     setError('')
     try {
-      await startGame(roomCode, playerOrder)
+      await startGame(roomCode, playerOrder, numRounds)
     } catch (err) {
       setError(err.message || 'Could not start game')
       setStarting(false)
@@ -33,6 +34,11 @@ export default function LobbyScreen({ room, roomCode, uid }) {
   async function handleLeave() {
     await leaveRoom(roomCode, uid)
     navigate('/')
+  }
+
+  async function handleRoundsChange(delta) {
+    const next = Math.min(MAX_NUM_ROUNDS, Math.max(1, numRounds + delta))
+    if (next !== numRounds) await setRoomNumRounds(roomCode, next)
   }
 
   return (
@@ -55,6 +61,33 @@ export default function LobbyScreen({ room, roomCode, uid }) {
             />
           ))}
         </div>
+      </div>
+
+      {/* Rounds picker — host only */}
+      <div className={styles.roundsSection}>
+        <p className={styles.roundsLabel}>Rounds</p>
+        <div className={styles.roundsPicker}>
+          {isHost ? (
+            <>
+              <button
+                className={styles.roundsBtn}
+                onClick={() => handleRoundsChange(-1)}
+                disabled={numRounds <= 1}
+              >−</button>
+              <span className={styles.roundsValue}>{numRounds}</span>
+              <button
+                className={styles.roundsBtn}
+                onClick={() => handleRoundsChange(1)}
+                disabled={numRounds >= MAX_NUM_ROUNDS}
+              >+</button>
+            </>
+          ) : (
+            <span className={styles.roundsValue}>{numRounds}</span>
+          )}
+        </div>
+        <p className={styles.roundsHint}>
+          1 round = every player guesses once ({connectedCount * numRounds} turns total)
+        </p>
       </div>
 
       {error && <p className={styles.error}>{error}</p>}
