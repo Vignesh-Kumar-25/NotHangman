@@ -3,16 +3,10 @@ import {
   set,
   get,
   update,
-  push,
-  onChildAdded,
   onValue,
   off,
-  query,
-  orderByKey,
-  limitToLast,
   onDisconnect,
   serverTimestamp,
-  runTransaction,
 } from 'firebase/database'
 import { db } from '@/firebase/config'
 import { generateRoomCode } from '@/utils/roomCode'
@@ -27,7 +21,7 @@ import {
 import { DEFAULT_VEHICLE_COLOR, DEFAULT_VEHICLE_STYLE } from './constants/vehicles'
 import { assignSpawns } from './utils/spawnUtils'
 
-// ── Room helpers ────────────────────────────────────────
+// ── Room CRUD ───────────────────────────────────────────
 
 export async function createRoom(uid, username, avatarId, vehicleColor, vehicleStyle) {
   if (!uid) throw new Error('Not signed in')
@@ -41,7 +35,7 @@ export async function createRoom(uid, username, avatarId, vehicleColor, vehicleS
   }
 
   const now = Date.now()
-  const roomData = {
+  await set(ref(db, `rooms/${roomCode}`), {
     meta: {
       hostUid: uid,
       createdAt: now,
@@ -55,25 +49,16 @@ export async function createRoom(uid, username, avatarId, vehicleColor, vehicleS
     },
     players: {
       [uid]: {
-        uid,
-        username,
-        avatarId,
+        uid, username, avatarId,
         vehicleColor: vehicleColor ?? DEFAULT_VEHICLE_COLOR,
         vehicleStyle: vehicleStyle ?? DEFAULT_VEHICLE_STYLE,
-        score: 0,
-        joinedAt: now,
-        connected: true,
+        score: 0, joinedAt: now, connected: true,
       },
     },
     playerOrder: [uid],
-    game: {
-      state: GAME_STATES.LOBBY,
-    },
-  }
-
-  await set(ref(db, `rooms/${roomCode}`), roomData)
+    game: { state: GAME_STATES.LOBBY },
+  })
   onDisconnect(ref(db, `rooms/${roomCode}/players/${uid}/connected`)).set(false)
-
   return roomCode
 }
 
@@ -81,28 +66,31 @@ export async function joinRoom(roomCode, uid, username, avatarId, vehicleColor, 
   if (!uid) throw new Error('Not signed in')
   const roomRef = ref(db, `rooms/${roomCode}`)
   const snap = await get(roomRef)
-
   if (!snap.exists()) throw new Error('Room not found')
   const room = snap.val()
   if (room.meta.gameType !== 'tron') throw new Error('This is not a Tron room')
   if (room.meta.status !== 'lobby') throw new Error('Game already in progress')
   if (Object.keys(room.players || {}).length >= 4) throw new Error('Room is full (max 4)')
 
+  // Check color uniqueness
+  const usedColors = Object.values(room.players || {}).map((p) => p.vehicleColor)
+  let finalColor = vehicleColor ?? DEFAULT_VEHICLE_COLOR
+  if (usedColors.includes(finalColor)) {
+    // Pick first unused color
+    for (let i = 0; i < 8; i++) {
+      if (!usedColors.includes(i)) { finalColor = i; break }
+    }
+  }
+
   const now = Date.now()
   const updates = {}
   updates[`players/${uid}`] = {
-    uid,
-    username,
-    avatarId,
-    vehicleColor: vehicleColor ?? DEFAULT_VEHICLE_COLOR,
+    uid, username, avatarId,
+    vehicleColor: finalColor,
     vehicleStyle: vehicleStyle ?? DEFAULT_VEHICLE_STYLE,
-    score: 0,
-    joinedAt: now,
-    connected: true,
+    score: 0, joinedAt: now, connected: true,
   }
-  const currentOrder = room.playerOrder || []
-  updates['playerOrder'] = [...currentOrder, uid]
-
+  updates['playerOrder'] = [...(room.playerOrder || []), uid]
   await update(roomRef, updates)
   onDisconnect(ref(db, `rooms/${roomCode}/players/${uid}/connected`)).set(false)
 }
@@ -111,15 +99,10 @@ export async function leaveRoom(roomCode, uid) {
   const roomRef = ref(db, `rooms/${roomCode}`)
   const snap = await get(roomRef)
   if (!snap.exists()) return
-
   const room = snap.val()
-  const updates = {}
-  updates[`players/${uid}/connected`] = false
-
+  const updates = { [`players/${uid}/connected`]: false }
   const playerOrder = room.playerOrder || []
-  const connectedOthers = playerOrder.filter(
-    (id) => id !== uid && room.players?.[id]?.connected !== false
-  )
+  const connectedOthers = playerOrder.filter((id) => id !== uid && room.players?.[id]?.connected !== false)
 
   if (room.meta.status === 'lobby') {
     const newOrder = playerOrder.filter((id) => id !== uid)
@@ -127,23 +110,15 @@ export async function leaveRoom(roomCode, uid) {
       updates['meta/hostUid'] = newOrder[0]
       updates['playerOrder'] = newOrder
     }
-  } else if (room.meta.status === 'in_progress') {
-    if (room.meta.hostUid === uid && connectedOthers.length > 0) {
-      updates['meta/hostUid'] = connectedOthers[0]
-    }
+  } else if (room.meta.hostUid === uid && connectedOthers.length > 0) {
+    updates['meta/hostUid'] = connectedOthers[0]
   }
-
   await update(roomRef, updates)
 }
 
 export async function updateVehicle(roomCode, uid, vehicleColor, vehicleStyle) {
-  await update(ref(db, `rooms/${roomCode}/players/${uid}`), {
-    vehicleColor,
-    vehicleStyle,
-  })
+  await update(ref(db, `rooms/${roomCode}/players/${uid}`), { vehicleColor, vehicleStyle })
 }
-
-// ── Lobby settings ──────────────────────────────────────
 
 export async function updateSettings(roomCode, settings) {
   const allowed = ['numRounds', 'roundDuration', 'trailLength', 'powerUpsEnabled']
@@ -154,14 +129,14 @@ export async function updateSettings(roomCode, settings) {
   await update(ref(db, `rooms/${roomCode}/meta`), updates)
 }
 
-// ── Game start ──────────────────────────────────────────
+// ── Game lifecycle ──────────────────────────────────────
 
 export async function startGame(roomCode, playerOrder, meta) {
   const numRounds = meta?.numRounds ?? DEFAULT_NUM_ROUNDS
   const spawns = assignSpawns(playerOrder)
   const seed = Math.floor(Math.random() * 2147483647)
 
-  const updates = {
+  await update(ref(db, `rooms/${roomCode}`), {
     'meta/status': 'in_progress',
     game: {
       state: GAME_STATES.COUNTDOWN,
@@ -170,17 +145,13 @@ export async function startGame(roomCode, playerOrder, meta) {
       roundStartTime: null,
       seed,
       spawns,
+      snapshot: null,
       inputs: null,
       deaths: null,
-      powerUps: null,
       roundResults: null,
     },
-  }
-
-  await update(ref(db, `rooms/${roomCode}`), updates)
+  })
 }
-
-// ── Countdown → Playing ─────────────────────────────────
 
 export async function beginPlaying(roomCode) {
   await update(ref(db, `rooms/${roomCode}/game`), {
@@ -189,65 +160,51 @@ export async function beginPlaying(roomCode) {
   })
 }
 
-// ── Input broadcasting ──────────────────────────────────
+// ── Host-authoritative sync ─────────────────────────────
 
-export async function broadcastInput(roomCode, uid, direction, x, y, tick) {
-  const inputRef = ref(db, `rooms/${roomCode}/game/inputs`)
-  await push(inputRef, {
-    uid,
-    direction,
-    x,
-    y,
-    tick,
-    timestamp: serverTimestamp(),
+// Host writes game state snapshot (called ~10x per second)
+export async function writeSnapshot(roomCode, snapshot) {
+  await set(ref(db, `rooms/${roomCode}/game/snapshot`), snapshot)
+}
+
+// Clients subscribe to snapshot
+export function subscribeToSnapshot(roomCode, callback) {
+  const snapshotRef = ref(db, `rooms/${roomCode}/game/snapshot`)
+  onValue(snapshotRef, (snap) => {
+    const data = snap.val()
+    if (data) callback(data)
+  })
+  return () => off(snapshotRef)
+}
+
+// Client writes their turn input (overwrite, not push)
+export async function writeTurnInput(roomCode, uid, turnInput) {
+  await set(ref(db, `rooms/${roomCode}/game/inputs/${uid}`), {
+    turnInput,
+    t: Date.now(),
   })
 }
 
-// ── Subscribe to inputs ─────────────────────────────────
-
+// Host subscribes to all player inputs
 export function subscribeToInputs(roomCode, callback) {
-  const inputsRef = query(
-    ref(db, `rooms/${roomCode}/game/inputs`),
-    orderByKey(),
-    limitToLast(1)
-  )
-  const unsubscribe = onChildAdded(inputsRef, (snap) => {
-    callback(snap.val())
+  const inputsRef = ref(db, `rooms/${roomCode}/game/inputs`)
+  onValue(inputsRef, (snap) => {
+    const data = snap.val()
+    if (data) callback(data)
   })
-  return () => off(inputsRef, 'child_added', unsubscribe)
+  return () => off(inputsRef)
 }
 
-// ── Death events ────────────────────────────────────────
-
-export async function reportDeath(roomCode, uid, killedBy, tick, x, y) {
-  await set(ref(db, `rooms/${roomCode}/game/deaths/${uid}`), {
-    killedBy,
-    tick,
-    x,
-    y,
-    timestamp: serverTimestamp(),
-  })
-}
-
-export function subscribeToDeaths(roomCode, callback) {
-  const deathsRef = ref(db, `rooms/${roomCode}/game/deaths`)
-  const unsub = onChildAdded(deathsRef, (snap) => {
-    callback(snap.key, snap.val())
-  })
-  return () => off(deathsRef, 'child_added', unsub)
-}
-
-// ── Round end ───────────────────────────────────────────
+// ── Round end / scoring ─────────────────────────────────
 
 export async function endRound(roomCode, game, players, winnerUid, killMap) {
   const round = game.round
-  const scores = {}
   const scoreUpdates = {}
+  const scores = {}
 
   for (const [uid, player] of Object.entries(players)) {
     let earned = 0
     if (uid === winnerUid) earned += POINTS_ROUND_WIN
-    // Count kills (how many deaths have killedBy === this uid)
     if (killMap) {
       const kills = Object.values(killMap).filter((d) => d.killedBy === uid).length
       earned += kills * POINTS_KILL
@@ -257,24 +214,15 @@ export async function endRound(roomCode, game, players, winnerUid, killMap) {
     scoreUpdates[`players/${uid}/score`] = newScore
   }
 
-  const updates = {
+  await update(ref(db, `rooms/${roomCode}`), {
     ...scoreUpdates,
-    [`game/roundResults/${round}`]: {
-      winnerUid: winnerUid || null,
-      kills: killMap || {},
-      scores,
-    },
+    [`game/roundResults/${round}`]: { winnerUid: winnerUid || null, kills: killMap || {}, scores },
     'game/state': GAME_STATES.ROUND_END,
-  }
-
-  await update(ref(db, `rooms/${roomCode}`), updates)
+  })
 }
-
-// ── Advance to next round ───────────────────────────────
 
 export async function advanceRound(roomCode, game, playerOrder) {
   const nextRound = game.round + 1
-
   if (nextRound > game.totalRounds) {
     await update(ref(db, `rooms/${roomCode}`), {
       'game/state': GAME_STATES.GAME_OVER,
@@ -282,64 +230,48 @@ export async function advanceRound(roomCode, game, playerOrder) {
     })
     return
   }
-
   const spawns = assignSpawns(playerOrder)
   const seed = Math.floor(Math.random() * 2147483647)
-
   await update(ref(db, `rooms/${roomCode}/game`), {
     state: GAME_STATES.COUNTDOWN,
     round: nextRound,
     roundStartTime: null,
-    seed,
-    spawns,
+    seed, spawns,
+    snapshot: null,
     inputs: null,
     deaths: null,
-    powerUps: null,
   })
 }
-
-// ── Reset game (play again) ─────────────────────────────
 
 export async function resetGame(roomCode, playerOrder, players, meta) {
   const playerUpdates = {}
   for (const uid of playerOrder) {
     playerUpdates[`players/${uid}/score`] = 0
   }
-
-  const numRounds = meta?.numRounds ?? DEFAULT_NUM_ROUNDS
   const spawns = assignSpawns(playerOrder)
   const seed = Math.floor(Math.random() * 2147483647)
-
   await update(ref(db, `rooms/${roomCode}`), {
     ...playerUpdates,
     'meta/status': 'in_progress',
     game: {
       state: GAME_STATES.COUNTDOWN,
       round: 1,
-      totalRounds: numRounds,
+      totalRounds: meta?.numRounds ?? DEFAULT_NUM_ROUNDS,
       roundStartTime: null,
-      seed,
-      spawns,
-      inputs: null,
-      deaths: null,
-      powerUps: null,
-      roundResults: null,
+      seed, spawns,
+      snapshot: null, inputs: null, deaths: null, roundResults: null,
     },
   })
 }
-
-// ── Promote host ────────────────────────────────────────
 
 export async function promoteHost(roomCode, newHostUid) {
   await update(ref(db, `rooms/${roomCode}/meta`), { hostUid: newHostUid })
 }
 
-// ── Power-up claim ──────────────────────────────────────
+// ── Color uniqueness check ──────────────────────────────
 
-export async function claimPowerUp(roomCode, powerUpId, uid) {
-  const puRef = ref(db, `rooms/${roomCode}/game/powerUps/${powerUpId}/claimedBy`)
-  await runTransaction(puRef, (current) => {
-    if (current !== null) return  // already claimed
-    return uid
-  })
+export function getUsedColors(players) {
+  return Object.values(players || {})
+    .filter((p) => p.connected !== false)
+    .map((p) => p.vehicleColor)
 }

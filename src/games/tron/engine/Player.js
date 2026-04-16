@@ -1,59 +1,59 @@
-import { DIR_VECTORS, OPPOSITE_DIR } from '../constants/gameConfig'
+import {
+  PLAYER_SPEED,
+  TURN_RATE,
+  PLAYER_RADIUS,
+} from '../constants/gameConfig'
 
 export class Player {
-  constructor(uid, x, y, direction, color, style) {
+  constructor(uid, x, y, angle, color, style) {
     this.uid = uid
     this.x = x
     this.y = y
-    this.direction = direction
+    this.angle = angle          // radians, 0 = right, PI/2 = down
     this.color = color
     this.style = style
+    this.speed = PLAYER_SPEED
+    this.turnRate = TURN_RATE
+    this.turnInput = 0          // -1 = left, 0 = straight, 1 = right
     this.alive = true
-    this.trail = []  // array of {x, y} from oldest to newest
-    this.speed = 1   // cells per tick (2 when speed boosted)
     this.ghost = false
+    this.trail = []             // array of {x, y}
+    this.radius = PLAYER_RADIUS
     this.activePowerUp = null
-    this.powerUpTicksLeft = 0
-    this.inputQueue = []  // max 2 queued direction changes
+    this.powerUpTimeLeft = 0
     this.killedBy = null
+    this.frameCount = 0
   }
 
-  queueDirection(newDir) {
-    if (this.inputQueue.length >= 2) return
+  update(dt) {
+    if (!this.alive) return
 
-    // Check against the last queued direction, or current direction
-    const lastDir = this.inputQueue.length > 0
-      ? this.inputQueue[this.inputQueue.length - 1]
-      : this.direction
+    this.frameCount++
 
-    // Prevent 180-degree turns and same-direction input
-    if (newDir === lastDir || newDir === OPPOSITE_DIR[lastDir]) return
+    // Steer
+    this.angle += this.turnInput * this.turnRate * dt
 
-    this.inputQueue.push(newDir)
-  }
+    // Move forward
+    this.x += Math.cos(this.angle) * this.speed * dt
+    this.y += Math.sin(this.angle) * this.speed * dt
 
-  applyNextInput() {
-    if (this.inputQueue.length > 0) {
-      this.direction = this.inputQueue.shift()
+    // Power-up timer
+    if (this.powerUpTimeLeft > 0) {
+      this.powerUpTimeLeft -= dt
+      if (this.powerUpTimeLeft <= 0) {
+        this.clearPowerUp()
+      }
     }
   }
 
-  getNextPosition() {
-    const vec = DIR_VECTORS[this.direction]
-    return { x: this.x + vec.dx * this.speed, y: this.y + vec.dy * this.speed }
-  }
-
-  moveTo(x, y) {
+  addTrailPoint() {
     this.trail.push({ x: this.x, y: this.y })
-    this.x = x
-    this.y = y
   }
 
-  trimTrail(maxLength, grid) {
-    if (maxLength <= 0) return  // infinite trail
+  trimTrail(maxLength) {
+    if (maxLength <= 0) return  // infinite
     while (this.trail.length > maxLength) {
-      const old = this.trail.shift()
-      grid.clear(old.x, old.y)
+      this.trail.shift()
     }
   }
 
@@ -62,36 +62,28 @@ export class Player {
     this.killedBy = killedBy
   }
 
-  tickPowerUp() {
-    if (this.powerUpTicksLeft > 0) {
-      this.powerUpTicksLeft--
-      if (this.powerUpTicksLeft <= 0) {
-        this.clearPowerUp()
-      }
-    }
-  }
-
   clearPowerUp() {
     if (this.activePowerUp === 'speed_boost') {
-      this.speed = 1
+      this.speed = PLAYER_SPEED
     } else if (this.activePowerUp === 'ghost_mode') {
       this.ghost = false
     }
     this.activePowerUp = null
-    this.powerUpTicksLeft = 0
+    this.powerUpTimeLeft = 0
   }
 
-  reset(x, y, direction) {
+  reset(x, y, angle) {
     this.x = x
     this.y = y
-    this.direction = direction
+    this.angle = angle
+    this.speed = PLAYER_SPEED
+    this.turnInput = 0
     this.alive = true
-    this.trail = []
-    this.speed = 1
     this.ghost = false
+    this.trail = []
     this.activePowerUp = null
-    this.powerUpTicksLeft = 0
-    this.inputQueue = []
+    this.powerUpTimeLeft = 0
     this.killedBy = null
+    this.frameCount = 0
   }
 }

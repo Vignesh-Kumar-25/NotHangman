@@ -3,7 +3,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 40vh;
+  height: 35vh;
   display: flex;
   pointer-events: auto;
   z-index: 100;
@@ -14,24 +14,46 @@
   background: none;
   border: none;
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 40px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 30px;
+  gap: 6px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  user-select: none;
 }
 
 .zone:active {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 255, 255, 0.06);
+}
+
+.divider {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  align-self: stretch;
+  margin: 20% 0;
 }
 
 .arrow {
-  font-size: 2rem;
-  color: rgba(255, 255, 255, 0.2);
+  font-size: 2.5rem;
+  color: rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+}
+
+.label {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   pointer-events: none;
 }
 
 .zone:active .arrow {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(0, 255, 255, 0.5);
+}
+
+.zone:active .label {
+  color: rgba(0, 255, 255, 0.3);
 }
