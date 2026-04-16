@@ -1,0 +1,63 @@
+.panel {
+  width: 100%;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--accent-secondary);
+  margin-bottom: 10px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  transition: opacity 0.3s;
+}
+
+.me {
+  border-color: var(--accent-primary);
+}
+
+.dead {
+  opacity: 0.4;
+}
+
+.colorDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.name {
+  flex: 1;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.you {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.7rem;
+}
+
+.score {
+  font-family: var(--font-display);
+  color: var(--accent-gold);
+  font-size: 0.85rem;
+}

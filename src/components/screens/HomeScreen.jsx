@@ -12,12 +12,12 @@ const GAMES = [
     available: true,
   },
   {
-    id: 'coming-soon',
-    name: 'Coming Soon',
-    description: 'More party games are on the way...',
-    icon: '🎲',
-    path: null,
-    available: false,
+    id: 'tron',
+    name: 'Tron',
+    description: 'Drive your light cycle and trap opponents in your trail!',
+    icon: '🏍️',
+    path: '/tron',
+    available: true,
   },
 ]
 

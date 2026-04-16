@@ -1,0 +1,110 @@
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  width: 100%;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--accent-secondary);
+  margin-bottom: 16px;
+}
+
+.setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.setting:last-child {
+  border-bottom: none;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  width: 32px;
+  height: 32px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background 0.12s;
+}
+.btn:hover:not(:disabled) { background: var(--accent-secondary); color: #000; }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.value {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--accent-secondary);
+  min-width: 2ch;
+  text-align: center;
+}
+
+.optionGroup {
+  display: flex;
+  gap: 6px;
+}
+
+.optionBtn {
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.optionBtn:hover:not(:disabled) {
+  border-color: var(--accent-secondary);
+  color: var(--text-primary);
+}
+.optionBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.active {
+  background: var(--accent-secondary);
+  color: #000;
+  border-color: var(--accent-secondary);
+}
+
+.toggleBtn {
+  padding: 4px 16px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-weight: 800;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.toggleBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.toggleOn {
+  background: var(--accent-success);
+  color: #000;
+  border-color: var(--accent-success);
+}

@@ -1,0 +1,37 @@
+.container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40vh;
+  display: flex;
+  pointer-events: auto;
+  z-index: 100;
+}
+
+.zone {
+  flex: 1;
+  background: none;
+  border: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 40px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.zone:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.arrow {
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+}
+
+.zone:active .arrow {
+  color: rgba(255, 255, 255, 0.5);
+}

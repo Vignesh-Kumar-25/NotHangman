@@ -33,6 +33,12 @@
   /* Hangman stroke */
   --hangman-stroke: #f1f5f9;
 
+  /* Tron colors */
+  --tron-cyan: #00ffff;
+  --tron-magenta: #ff00ff;
+  --tron-grid: #1a1a3e;
+  --tron-grid-line: #2a2a4e;
+
   /* Fonts */
   --font-display:   'Fredoka One', cursive;
   --font-body:      'Nunito', sans-serif;
