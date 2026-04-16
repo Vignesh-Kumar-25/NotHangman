@@ -35,13 +35,14 @@ export function useGameLoop(containerRef, room, roomCode, uid, isHost) {
     inputManagerRef.current.bindKeyboard()
 
     return () => {
-      if (inputManagerRef.current) inputManagerRef.current.destroy()
-      if (loopRef.current) clearInterval(loopRef.current)
-      if (snapshotIntervalRef.current) clearInterval(snapshotIntervalRef.current)
-      if (unsubSnapshotRef.current) unsubSnapshotRef.current()
-      if (unsubInputsRef.current) unsubInputsRef.current()
-      if (phaserRef.current) phaserRef.current.destroy(true)
-      if (engineRef.current) engineRef.current.destroy()
+      if (inputManagerRef.current) { inputManagerRef.current.destroy(); inputManagerRef.current = null }
+      if (loopRef.current) { clearInterval(loopRef.current); loopRef.current = null }
+      if (snapshotIntervalRef.current) { clearInterval(snapshotIntervalRef.current); snapshotIntervalRef.current = null }
+      if (unsubSnapshotRef.current) { unsubSnapshotRef.current(); unsubSnapshotRef.current = null }
+      if (unsubInputsRef.current) { unsubInputsRef.current(); unsubInputsRef.current = null }
+      if (phaserRef.current) { phaserRef.current.destroy(true); phaserRef.current = null }
+      if (engineRef.current) { engineRef.current.destroy(); engineRef.current = null }
+      sceneRef.current = null
     }
   }, [])
 
