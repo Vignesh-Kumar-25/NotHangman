@@ -5,7 +5,7 @@ export function assignSpawns(playerOrder) {
   const spawns = {}
   playerOrder.forEach((uid, i) => {
     const pos = positions[i % positions.length]
-    spawns[uid] = { x: pos.x, y: pos.y, direction: pos.direction }
+    spawns[uid] = { x: pos.x, y: pos.y, angle: pos.angle }
   })
   return spawns
 }
