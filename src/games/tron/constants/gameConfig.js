@@ -1,27 +1,40 @@
-export const GRID_WIDTH = 80
-export const GRID_HEIGHT = 80
-export const CELL_SIZE = 8
+// Arena
+export const ARENA_WIDTH = 1000
+export const ARENA_HEIGHT = 700
 
-export const TICK_RATE = 10           // ticks per second
-export const TICK_INTERVAL = 1000 / TICK_RATE  // ms per tick
+// Movement (continuous, angle-based)
+export const PLAYER_SPEED = 150        // pixels per second
+export const TURN_RATE = 3.2           // radians per second
+export const BOOST_SPEED = 280         // speed during speed boost
+export const TRAIL_WIDTH = 4           // pixels
+export const TRAIL_GLOW_WIDTH = 12     // glow around trail
 
+// Tick / sync
+export const PHYSICS_FPS = 60
+export const PHYSICS_DT = 1 / PHYSICS_FPS
+export const SNAPSHOT_RATE = 100       // ms between host snapshots to Firebase
+export const TRAIL_POINT_INTERVAL = 3  // add trail point every N physics frames
+
+// Players
 export const MAX_PLAYERS = 4
 export const MIN_PLAYERS = 2
 
-export const COUNTDOWN_DURATION = 3   // seconds
-export const ROUND_END_DELAY = 4000   // ms before next round
-export const DEFAULT_ROUND_DURATION = 90  // seconds per round
+// Timing
+export const COUNTDOWN_DURATION = 3    // seconds
+export const ROUND_END_DELAY = 4000    // ms before next round
+export const DEFAULT_ROUND_DURATION = 90
 export const ROUND_DURATIONS = [60, 90, 120, 180]
 
+// Rounds
 export const DEFAULT_NUM_ROUNDS = 2
 export const MAX_NUM_ROUNDS = 5
 
-// Trail length options
+// Trail length (number of trail points kept)
 export const TRAIL_LENGTHS = {
-  SHORT: 30,
-  MEDIUM: 60,
-  LONG: 100,
-  INFINITE: 0,  // 0 means infinite
+  SHORT: 120,
+  MEDIUM: 250,
+  LONG: 500,
+  INFINITE: 0,
 }
 export const DEFAULT_TRAIL_LENGTH = TRAIL_LENGTHS.MEDIUM
 export const TRAIL_LENGTH_OPTIONS = [
@@ -35,30 +48,12 @@ export const TRAIL_LENGTH_OPTIONS = [
 export const POINTS_ROUND_WIN = 100
 export const POINTS_KILL = 50
 
-// Power-up spawn interval (in ticks)
-export const POWERUP_SPAWN_INTERVAL = 50  // every 5 seconds at 10 ticks/sec
+// Power-ups
+export const POWERUP_SPAWN_INTERVAL = 5000   // ms between spawns
 export const MAX_ACTIVE_POWERUPS = 3
+export const POWERUP_RADIUS = 16             // pickup radius in pixels
 
-// Directions
-export const DIRECTIONS = {
-  UP: 'up',
-  DOWN: 'down',
-  LEFT: 'left',
-  RIGHT: 'right',
-}
-
-// Direction vectors
-export const DIR_VECTORS = {
-  up: { dx: 0, dy: -1 },
-  down: { dx: 0, dy: 1 },
-  left: { dx: -1, dy: 0 },
-  right: { dx: 1, dy: 0 },
-}
-
-// Opposite directions (to prevent 180-degree turns)
-export const OPPOSITE_DIR = {
-  up: 'down',
-  down: 'up',
-  left: 'right',
-  right: 'left',
-}
+// Collision
+export const PLAYER_RADIUS = 8              // collision radius
+export const WALL_MARGIN = 2
+export const SELF_TRAIL_SKIP = 15           // skip last N trail points for self-collision

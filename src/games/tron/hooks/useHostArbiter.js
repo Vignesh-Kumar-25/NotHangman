@@ -5,8 +5,8 @@ import { COUNTDOWN_DURATION, ROUND_END_DELAY } from '../constants/gameConfig'
 import { useServerTimeOffset } from '@/hooks/useServerTimeOffset'
 
 export function useHostArbiter({ isHost, room, roomCode, uid, engineRef }) {
-  const countdownTimerRef = useRef(null)
-  const roundEndTimerRef = useRef(null)
+  const countdownRef = useRef(null)
+  const roundEndRef = useRef(null)
   const promotedRef = useRef(false)
   const roundEndedRef = useRef(null)
 
@@ -15,20 +15,16 @@ export function useHostArbiter({ isHost, room, roomCode, uid, engineRef }) {
   const playerOrder = room?.playerOrder || []
   const meta = room?.meta || {}
 
-  // ── Host reassignment on disconnect ──────────────────
+  // Host reassignment
   useEffect(() => {
     if (!room || !uid || promotedRef.current) return
-    const hostUid = meta.hostUid
-    const hostPlayer = players[hostUid]
-
+    const hostPlayer = players[meta.hostUid]
     if (hostPlayer && hostPlayer.connected === false) {
-      const connectedIds = playerOrder.filter((id) => players[id]?.connected !== false)
-      if (connectedIds.length === 0) return
-
-      const newHost = connectedIds.reduce((best, id) => {
-        return (players[id].joinedAt ?? Infinity) < (players[best].joinedAt ?? Infinity) ? id : best
-      })
-
+      const connected = playerOrder.filter((id) => players[id]?.connected !== false)
+      if (connected.length === 0) return
+      const newHost = connected.reduce((best, id) =>
+        (players[id].joinedAt ?? Infinity) < (players[best].joinedAt ?? Infinity) ? id : best
+      )
       if (newHost === uid) {
         promotedRef.current = true
         promoteHost(roomCode, uid).catch(console.error)
@@ -36,83 +32,58 @@ export function useHostArbiter({ isHost, room, roomCode, uid, engineRef }) {
     }
   }, [room, uid, roomCode, meta, players, playerOrder])
 
-  // ── COUNTDOWN → PLAYING ───────────────────────────────
+  // COUNTDOWN -> PLAYING
   useEffect(() => {
-    if (!isHost || !game) return
-    if (game.state !== GAME_STATES.COUNTDOWN) return
-
-    countdownTimerRef.current = setTimeout(() => {
+    if (!isHost || game?.state !== GAME_STATES.COUNTDOWN) return
+    countdownRef.current = setTimeout(() => {
       beginPlaying(roomCode).catch(console.error)
     }, COUNTDOWN_DURATION * 1000)
-
-    return () => {
-      if (countdownTimerRef.current) clearTimeout(countdownTimerRef.current)
-    }
+    return () => clearTimeout(countdownRef.current)
   }, [isHost, game?.state, game?.round, roomCode])
 
-  // ── Detect round end from engine ──────────────────────
+  // Detect round end from engine (host only)
   useEffect(() => {
-    if (!isHost || !game || !engineRef?.current) return
-    if (game.state !== GAME_STATES.PLAYING) return
+    if (!isHost || game?.state !== GAME_STATES.PLAYING) return
+    const check = setInterval(() => {
+      const engine = engineRef?.current
+      if (!engine || engine.running) return
+      if (roundEndedRef.current === game.round) return
+      roundEndedRef.current = game.round
 
-    const engine = engineRef.current
-    const checkInterval = setInterval(() => {
-      if (!engine.running && roundEndedRef.current !== game.round) {
-        roundEndedRef.current = game.round
-
-        // Gather kill map from engine deaths
-        const killMap = {}
-        for (const death of engine.deaths) {
-          killMap[death.uid] = { killedBy: death.killedBy, tick: death.tick }
-        }
-
-        const winnerUid = engine.getWinner()
-        endRound(roomCode, game, players, winnerUid, killMap).catch(console.error)
-
-        clearInterval(checkInterval)
+      const killMap = {}
+      for (const d of engine.deaths) {
+        killMap[d.uid] = { killedBy: d.killedBy }
       }
+      endRound(roomCode, game, players, engine.getWinner(), killMap).catch(console.error)
+      clearInterval(check)
     }, 100)
-
-    return () => clearInterval(checkInterval)
+    return () => clearInterval(check)
   }, [isHost, game?.state, game?.round, roomCode, players, engineRef])
 
-  // ── ROUND_END → next round or GAME_OVER ───────────────
+  // ROUND_END -> next round
   useEffect(() => {
-    if (!isHost || !game) return
-    if (game.state !== GAME_STATES.ROUND_END) return
-
-    roundEndTimerRef.current = setTimeout(() => {
+    if (!isHost || game?.state !== GAME_STATES.ROUND_END) return
+    roundEndRef.current = setTimeout(() => {
       advanceRound(roomCode, game, playerOrder).catch(console.error)
     }, ROUND_END_DELAY)
-
-    return () => {
-      if (roundEndTimerRef.current) clearTimeout(roundEndTimerRef.current)
-    }
+    return () => clearTimeout(roundEndRef.current)
   }, [isHost, game?.state, game?.round, roomCode, playerOrder])
 
-  // ── Round timer expiry ────────────────────────────────
+  // Round timer expiry
   const serverTimeOffset = useServerTimeOffset()
   useEffect(() => {
-    if (!isHost || !game) return
-    if (game.state !== GAME_STATES.PLAYING || !game.roundStartTime) return
-
+    if (!isHost || game?.state !== GAME_STATES.PLAYING || !game.roundStartTime) return
     const roundDuration = meta.roundDuration || 90
     const serverNow = Date.now() + (serverTimeOffset || 0)
-    const elapsed = (serverNow - game.roundStartTime) / 1000
-    const remaining = roundDuration - elapsed
+    const remaining = roundDuration - (serverNow - game.roundStartTime) / 1000
 
     if (remaining <= 0) {
-      // Time's up — end round immediately
       if (roundEndedRef.current !== game.round && engineRef?.current) {
         roundEndedRef.current = game.round
-        const engine = engineRef.current
-        engine.running = false
+        engineRef.current.running = false
         const killMap = {}
-        for (const death of engine.deaths) {
-          killMap[death.uid] = { killedBy: death.killedBy, tick: death.tick }
-        }
-        const winnerUid = engine.getWinner()
-        endRound(roomCode, game, players, winnerUid, killMap).catch(console.error)
+        for (const d of engineRef.current.deaths) killMap[d.uid] = { killedBy: d.killedBy }
+        endRound(roomCode, game, players, engineRef.current.getWinner(), killMap).catch(console.error)
       }
       return
     }
@@ -120,17 +91,12 @@ export function useHostArbiter({ isHost, room, roomCode, uid, engineRef }) {
     const timeout = setTimeout(() => {
       if (roundEndedRef.current !== game.round && engineRef?.current) {
         roundEndedRef.current = game.round
-        const engine = engineRef.current
-        engine.running = false
+        engineRef.current.running = false
         const killMap = {}
-        for (const death of engine.deaths) {
-          killMap[death.uid] = { killedBy: death.killedBy, tick: death.tick }
-        }
-        const winnerUid = engine.getWinner()
-        endRound(roomCode, game, players, winnerUid, killMap).catch(console.error)
+        for (const d of engineRef.current.deaths) killMap[d.uid] = { killedBy: d.killedBy }
+        endRound(roomCode, game, players, engineRef.current.getWinner(), killMap).catch(console.error)
       }
     }, remaining * 1000)
-
     return () => clearTimeout(timeout)
   }, [isHost, game?.state, game?.round, game?.roundStartTime, roomCode, serverTimeOffset, meta, players, engineRef])
 }

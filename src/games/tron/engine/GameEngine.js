@@ -1,128 +1,139 @@
-import { Grid } from './Grid'
 import { Player } from './Player'
-import { CollisionDetector } from './CollisionDetector'
 import { PowerUpManager } from './PowerUpManager'
-import { Renderer } from './Renderer'
-import { GRID_WIDTH, GRID_HEIGHT, CELL_SIZE, DEFAULT_TRAIL_LENGTH } from '../constants/gameConfig'
+import { checkWallCollision, checkTrailCollision, checkHeadOnCollision } from './TrailCollision'
+import {
+  PHYSICS_DT,
+  TRAIL_POINT_INTERVAL,
+  DEFAULT_TRAIL_LENGTH,
+  PLAYER_SPEED,
+} from '../constants/gameConfig'
 import { getColorHex } from '../constants/vehicles'
 
 export class GameEngine {
   constructor(options = {}) {
-    this.cellSize = options.cellSize || CELL_SIZE
     this.trailLength = options.trailLength || DEFAULT_TRAIL_LENGTH
     this.powerUpsEnabled = options.powerUpsEnabled !== false
-
-    this.grid = new Grid(GRID_WIDTH, GRID_HEIGHT)
-    this.collisionDetector = new CollisionDetector(this.grid)
-    this.players = new Map()  // uid -> Player
-    this.renderer = null
+    this.players = new Map()
     this.powerUpManager = null
-    this.tickNumber = 0
     this.running = false
-    this.deaths = []  // collected each tick: { uid, killedBy, tick, x, y }
-    this.onDeath = null  // callback: (deathEvent) => void
-    this.onPowerUpEvent = null  // callback: (event) => void
-  }
-
-  initRenderer(ctx) {
-    this.renderer = new Renderer(ctx, this.cellSize)
+    this.elapsed = 0
+    this.deaths = []
+    this.onDeath = null
+    this.onPowerUpEvent = null
   }
 
   initRound(spawns, playerInfos, seed) {
-    this.grid.clearAll()
-    this.tickNumber = 0
+    this.elapsed = 0
     this.deaths = []
     this.running = true
 
-    // Initialize players
     this.players.clear()
     for (const [uid, spawn] of Object.entries(spawns)) {
       const info = playerInfos[uid] || {}
       const color = getColorHex(info.vehicleColor ?? 0)
       const style = info.vehicleStyle ?? 0
-      const player = new Player(uid, spawn.x, spawn.y, spawn.direction, color, style)
+      const player = new Player(uid, spawn.x, spawn.y, spawn.angle, color, style)
+      player.addTrailPoint()
       this.players.set(uid, player)
-      // Place initial position on grid
-      this.grid.set(spawn.x, spawn.y, { type: 'trail', uid })
     }
 
-    // Initialize power-up manager
-    this.powerUpManager = new PowerUpManager(this.grid, seed, this.powerUpsEnabled)
+    this.powerUpManager = new PowerUpManager(seed, this.powerUpsEnabled)
   }
 
+  // Called by host at fixed timestep
   tick() {
-    if (!this.running) return
+    if (!this.running) return null
 
-    this.tickNumber++
+    const dt = PHYSICS_DT
+    this.elapsed += dt * 1000
     const newDeaths = []
+
     const alivePlayers = []
-
-    for (const player of this.players.values()) {
-      if (player.alive) alivePlayers.push(player)
+    for (const p of this.players.values()) {
+      if (p.alive) alivePlayers.push(p)
     }
 
-    // Apply queued inputs
+    // Update positions
     for (const player of alivePlayers) {
-      player.applyNextInput()
+      player.update(dt)
     }
 
-    // Calculate next positions for all alive players
-    const moves = new Map()
+    // Add trail points periodically
     for (const player of alivePlayers) {
-      moves.set(player.uid, player.getNextPosition())
-    }
-
-    // Check collisions and move
-    for (const player of alivePlayers) {
-      const next = moves.get(player.uid)
-      const result = this.collisionDetector.check(player, next.x, next.y, alivePlayers)
-
-      if (result.hit) {
-        player.die(result.killedBy)
-        const deathEvent = {
-          uid: player.uid,
-          killedBy: result.killedBy,
-          tick: this.tickNumber,
-          x: player.x,
-          y: player.y,
-        }
-        newDeaths.push(deathEvent)
-        if (this.onDeath) this.onDeath(deathEvent)
-      } else {
-        player.moveTo(next.x, next.y)
-        this.grid.set(next.x, next.y, { type: 'trail', uid: player.uid })
-        player.trimTrail(this.trailLength, this.grid)
+      if (player.frameCount % TRAIL_POINT_INTERVAL === 0) {
+        player.addTrailPoint()
+        player.trimTrail(this.trailLength)
       }
     }
 
-    // Handle mutual head-on collisions
-    // (if two players moved to each other's previous positions)
-    for (let i = 0; i < alivePlayers.length; i++) {
-      for (let j = i + 1; j < alivePlayers.length; j++) {
-        const a = alivePlayers[i]
-        const b = alivePlayers[j]
-        if (a.alive && b.alive && a.x === b.x && a.y === b.y) {
-          a.die(b.uid)
-          b.die(a.uid)
-          const deathA = { uid: a.uid, killedBy: b.uid, tick: this.tickNumber, x: a.x, y: a.y }
-          const deathB = { uid: b.uid, killedBy: a.uid, tick: this.tickNumber, x: b.x, y: b.y }
-          newDeaths.push(deathA, deathB)
-          if (this.onDeath) {
-            this.onDeath(deathA)
-            this.onDeath(deathB)
+    // Check wall collisions
+    for (const player of alivePlayers) {
+      const wall = checkWallCollision(player)
+      if (wall.hit) {
+        player.die('wall')
+        const ev = { uid: player.uid, killedBy: 'wall', x: player.x, y: player.y }
+        newDeaths.push(ev)
+        if (this.onDeath) this.onDeath(ev)
+      }
+    }
+
+    // Check trail collisions
+    for (const player of alivePlayers) {
+      if (!player.alive) continue
+      const trail = checkTrailCollision(player, Array.from(this.players.values()))
+      if (trail.hit) {
+        player.die(trail.killedBy)
+        const ev = { uid: player.uid, killedBy: trail.killedBy, x: player.x, y: player.y }
+        newDeaths.push(ev)
+        if (this.onDeath) this.onDeath(ev)
+      }
+    }
+
+    // Check phase wall collisions
+    if (this.powerUpManager) {
+      for (const player of alivePlayers) {
+        if (!player.alive || player.ghost) continue
+        for (const pw of this.powerUpManager.phaseWalls) {
+          for (const seg of pw.segments) {
+            const dx = seg.x2 - seg.x1
+            const dy = seg.y2 - seg.y1
+            const len = Math.sqrt(dx * dx + dy * dy)
+            if (len === 0) continue
+            const nx = -dy / len
+            const ny = dx / len
+            const dist = Math.abs((player.x - seg.x1) * nx + (player.y - seg.y1) * ny)
+            // Check if player is within segment bounds
+            const t = ((player.x - seg.x1) * dx + (player.y - seg.y1) * dy) / (len * len)
+            if (t >= 0 && t <= 1 && dist < 10) {
+              player.die(pw.placedBy)
+              const ev = { uid: player.uid, killedBy: pw.placedBy, x: player.x, y: player.y }
+              newDeaths.push(ev)
+              if (this.onDeath) this.onDeath(ev)
+            }
           }
         }
       }
     }
 
-    // Tick power-ups
-    for (const player of this.players.values()) {
-      if (player.alive) player.tickPowerUp()
+    // Head-on collisions
+    for (let i = 0; i < alivePlayers.length; i++) {
+      for (let j = i + 1; j < alivePlayers.length; j++) {
+        const a = alivePlayers[i]
+        const b = alivePlayers[j]
+        if (a.alive && b.alive && checkHeadOnCollision(a, b)) {
+          a.die(b.uid)
+          b.die(a.uid)
+          const evA = { uid: a.uid, killedBy: b.uid, x: a.x, y: a.y }
+          const evB = { uid: b.uid, killedBy: a.uid, x: b.x, y: b.y }
+          newDeaths.push(evA, evB)
+          if (this.onDeath) { this.onDeath(evA); this.onDeath(evB) }
+        }
+      }
     }
 
-    // Power-up manager tick
+    // Power-ups
     if (this.powerUpManager) {
-      const puEvents = this.powerUpManager.tick(this.tickNumber, Array.from(this.players.values()))
+      const puEvents = this.powerUpManager.update(this.elapsed, Array.from(this.players.values()))
       if (this.onPowerUpEvent) {
         puEvents.forEach((e) => this.onPowerUpEvent(e))
       }
@@ -130,7 +141,6 @@ export class GameEngine {
 
     this.deaths.push(...newDeaths)
 
-    // Check if round should end (0 or 1 alive)
     const stillAlive = Array.from(this.players.values()).filter((p) => p.alive)
     if (stillAlive.length <= 1) {
       this.running = false
@@ -143,37 +153,92 @@ export class GameEngine {
     }
   }
 
-  queueInput(uid, direction) {
-    const player = this.players.get(uid)
-    if (player && player.alive) {
-      player.queueDirection(direction)
+  // Get snapshot for broadcasting (host only)
+  getSnapshot() {
+    const playersData = {}
+    for (const [uid, p] of this.players) {
+      playersData[uid] = {
+        x: Math.round(p.x * 10) / 10,
+        y: Math.round(p.y * 10) / 10,
+        angle: Math.round(p.angle * 1000) / 1000,
+        speed: p.speed,
+        alive: p.alive,
+        ghost: p.ghost,
+        trailLen: p.trail.length,
+        activePowerUp: p.activePowerUp || null,
+      }
+    }
+    // Send recent trail points (last few per player)
+    const trails = {}
+    for (const [uid, p] of this.players) {
+      const recentCount = TRAIL_POINT_INTERVAL + 1
+      trails[uid] = p.trail.slice(-recentCount).map(pt => ({
+        x: Math.round(pt.x * 10) / 10,
+        y: Math.round(pt.y * 10) / 10,
+      }))
+    }
+    return {
+      elapsed: this.elapsed,
+      players: playersData,
+      trails,
+      powerUps: this.powerUpManager?.activePowerUps || [],
+      phaseWalls: this.powerUpManager?.phaseWalls?.map(pw => ({
+        id: pw.id,
+        segments: pw.segments,
+        placedBy: pw.placedBy,
+      })) || [],
     }
   }
 
-  applyRemoteInput(uid, direction, reportedX, reportedY) {
-    const player = this.players.get(uid)
-    if (!player || !player.alive) return
+  // Apply snapshot from host (client only)
+  applySnapshot(snapshot) {
+    if (!snapshot?.players) return
 
-    // Snap correction if position mismatch
-    const dx = Math.abs(player.x - reportedX)
-    const dy = Math.abs(player.y - reportedY)
-    if (dx > 0 || dy > 0) {
-      // Clear trail at old positions and re-place at new
-      if (dx <= 3 && dy <= 3) {
-        player.x = reportedX
-        player.y = reportedY
+    for (const [uid, data] of Object.entries(snapshot.players)) {
+      const player = this.players.get(uid)
+      if (!player) continue
+
+      player.x = data.x
+      player.y = data.y
+      player.angle = data.angle
+      player.speed = data.speed
+      player.alive = data.alive
+      player.ghost = data.ghost || false
+      player.activePowerUp = data.activePowerUp || null
+    }
+
+    // Append trail points from snapshot
+    if (snapshot.trails) {
+      for (const [uid, points] of Object.entries(snapshot.trails)) {
+        const player = this.players.get(uid)
+        if (!player || !points?.length) continue
+        for (const pt of points) {
+          const last = player.trail[player.trail.length - 1]
+          if (!last || Math.abs(last.x - pt.x) > 0.5 || Math.abs(last.y - pt.y) > 0.5) {
+            player.trail.push(pt)
+          }
+        }
+        player.trimTrail(this.trailLength)
       }
     }
 
-    player.queueDirection(direction)
+    // Sync power-ups
+    if (this.powerUpManager && snapshot.powerUps) {
+      this.powerUpManager.activePowerUps = snapshot.powerUps
+    }
+  }
+
+  setTurnInput(uid, turnInput) {
+    const player = this.players.get(uid)
+    if (player && player.alive) {
+      player.turnInput = turnInput
+    }
   }
 
   getAliveCount() {
-    let count = 0
-    for (const player of this.players.values()) {
-      if (player.alive) count++
-    }
-    return count
+    let c = 0
+    for (const p of this.players.values()) if (p.alive) c++
+    return c
   }
 
   getWinner() {
@@ -181,15 +246,9 @@ export class GameEngine {
     return alive.length === 1 ? alive[0].uid : null
   }
 
-  render(interpolation) {
-    if (!this.renderer) return
-    this.renderer.render(this.players, this.powerUpManager, interpolation)
-  }
-
   destroy() {
     this.running = false
     this.players.clear()
-    this.grid.clearAll()
     this.onDeath = null
     this.onPowerUpEvent = null
   }

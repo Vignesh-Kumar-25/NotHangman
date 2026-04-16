@@ -2,7 +2,9 @@
   display: grid;
   grid-template-columns: 180px 1fr;
   min-height: 100vh;
+  height: 100vh;
   gap: 0;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -12,6 +14,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow-y: auto;
 }
 
 .main {
@@ -19,6 +22,21 @@
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+}
+
+.gameContainer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #060612;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.gameContainer canvas {
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .sidebarActions {
