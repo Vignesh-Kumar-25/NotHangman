@@ -1,4 +1,5 @@
-export const TURN_DURATION = 30        // seconds per turn
+export const TURN_DURATION = 30        // seconds per turn (default)
+export const TURN_DURATION_OPTIONS = [15, 20, 30, 45, 60]
 export const MAX_PLAYERS = 5
 export const MIN_PLAYERS = 2
 export const MIN_WORD_LENGTH = 6

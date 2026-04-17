@@ -71,7 +71,31 @@ export async function joinRoom(roomCode, uid, username, avatarId) {
   if (!snap.exists()) throw new Error('Room not found')
   const room = snap.val()
   if (room.meta.status !== 'lobby') throw new Error('Game already in progress')
-  if (Object.keys(room.players || {}).length >= 5) throw new Error('Room is full')
+
+  const existingPlayer = room.players?.[uid]
+  const currentOrder = room.playerOrder || []
+
+  // Player rejoining — just re-enable them
+  if (existingPlayer) {
+    const updates = {
+      [`players/${uid}/connected`]: true,
+      [`players/${uid}/username`]: username,
+      [`players/${uid}/avatarId`]: avatarId,
+    }
+    // Ensure they're in playerOrder (may have been removed on leave)
+    if (!currentOrder.includes(uid)) {
+      updates['playerOrder'] = [...currentOrder, uid]
+    }
+    await update(roomRef, updates)
+    onDisconnect(ref(db, `rooms/${roomCode}/players/${uid}/connected`)).set(false)
+    return
+  }
+
+  // New player joining
+  const connectedCount = currentOrder.filter(
+    (id) => room.players?.[id]?.connected !== false
+  ).length
+  if (connectedCount >= 5) throw new Error('Room is full')
 
   const now = Date.now()
   const updates = {}
@@ -83,8 +107,6 @@ export async function joinRoom(roomCode, uid, username, avatarId) {
     joinedAt: now,
     connected: true,
   }
-  // Append to playerOrder
-  const currentOrder = room.playerOrder || []
   updates['playerOrder'] = [...currentOrder, uid]
 
   await update(roomRef, updates)
@@ -106,11 +128,12 @@ export async function leaveRoom(roomCode, uid) {
   )
 
   if (room.meta.status === 'lobby') {
-    // Remove from order and transfer host if needed
+    // Remove from order and delete player entry
     const newOrder = playerOrder.filter((id) => id !== uid)
+    updates['playerOrder'] = newOrder
+    updates[`players/${uid}`] = null
     if (room.meta.hostUid === uid && newOrder.length > 0) {
       updates['meta/hostUid'] = newOrder[0]
-      updates['playerOrder'] = newOrder
     }
   } else if (room.meta.status === 'in_progress') {
     const game = room.game
@@ -142,10 +165,80 @@ export async function setRoomNumRounds(roomCode, numRounds) {
   await update(ref(db, `rooms/${roomCode}/meta`), { numRounds })
 }
 
+export async function setRoomTurnDuration(roomCode, turnDuration) {
+  await update(ref(db, `rooms/${roomCode}/meta`), { turnDuration })
+}
+
+export async function setRoomCategories(roomCode, categories) {
+  // categories is an array like ['movies', 'countries'] or null for all
+  await update(ref(db, `rooms/${roomCode}/meta`), { categories: categories || null })
+}
+
+// ── Vote to kick ───────────────────────────────────────
+
+export async function voteToKick(roomCode, voterUid, targetUid) {
+  const roomRef = ref(db, `rooms/${roomCode}`)
+  const snap = await get(roomRef)
+  if (!snap.exists()) return
+
+  const room = snap.val()
+  const playerOrder = room.playerOrder || []
+  const players = room.players || {}
+  const connectedIds = playerOrder.filter(
+    (id) => players[id]?.connected !== false && id !== targetUid
+  )
+
+  // Record this vote
+  const kickVotes = room.kickVotes?.[targetUid] || {}
+  kickVotes[voterUid] = true
+  const voteCount = Object.keys(kickVotes).length
+  const needed = Math.ceil(connectedIds.length / 2)
+
+  const updates = {}
+  updates[`kickVotes/${targetUid}`] = kickVotes
+
+  if (voteCount >= needed) {
+    // Kick passes — disconnect the player
+    updates[`players/${targetUid}/connected`] = false
+    updates[`players/${targetUid}/kicked`] = true
+    updates[`kickVotes/${targetUid}`] = null
+
+    // Remove from playerOrder in lobby
+    if (room.meta.status === 'lobby') {
+      updates['playerOrder'] = playerOrder.filter((id) => id !== targetUid)
+      updates[`players/${targetUid}`] = null
+    }
+
+    // Transfer host if kicked player was host
+    if (room.meta.hostUid === targetUid) {
+      const remaining = connectedIds.filter((id) => id !== targetUid)
+      if (remaining.length > 0) updates['meta/hostUid'] = remaining[0]
+    }
+
+    // Transfer turn if kicked player had turn
+    if (room.game?.currentTurnUid === targetUid && room.meta.status === 'in_progress') {
+      const remaining = connectedIds.filter((id) => id !== targetUid)
+      if (remaining.length > 0) {
+        updates['game/currentTurnUid'] = remaining[0]
+        updates['game/turnStartTime'] = serverTimestamp()
+      }
+    }
+  }
+
+  await update(roomRef, updates)
+  return { voteCount, needed, kicked: voteCount >= needed }
+}
+
 // ── Game start ──────────────────────────────────────────
 
-export async function startGame(roomCode, playerOrder, numRounds = DEFAULT_NUM_ROUNDS) {
-  const { word, category } = pickWordForRound(0)
+export async function startGame(roomCode, playerOrder, numRounds = DEFAULT_NUM_ROUNDS, { turnDuration, categories } = {}) {
+  // Read current meta for settings
+  const metaSnap = await get(ref(db, `rooms/${roomCode}/meta`))
+  const meta = metaSnap.val() || {}
+  const effectiveTurnDuration = turnDuration ?? meta.turnDuration ?? 30
+  const effectiveCategories = categories ?? meta.categories ?? null
+
+  const { word, category } = pickWordForRound(0, effectiveCategories)
   const totalRounds = numRounds * playerOrder.length
 
   const updates = {
@@ -156,6 +249,8 @@ export async function startGame(roomCode, playerOrder, numRounds = DEFAULT_NUM_R
       round: 1,
       totalRounds,
       numRounds,
+      turnDuration: effectiveTurnDuration,
+      categories: effectiveCategories,
       currentTurnUid: playerOrder[0],
       turnStartTime: serverTimestamp(),
       word,
@@ -295,7 +390,7 @@ export async function advanceRound(roomCode, game, playerOrder, players) {
     },
   }
 
-  const { word, category } = pickWordForRound(nextRound - 1)
+  const { word, category } = pickWordForRound(nextRound - 1, game.categories)
   const startingPlayer = playerOrder[(nextRound - 1) % playerOrder.length]
 
   const updates = {
@@ -305,6 +400,8 @@ export async function advanceRound(roomCode, game, playerOrder, players) {
       round: nextRound,
       totalRounds: game.totalRounds,
       numRounds: game.numRounds,
+      turnDuration: game.turnDuration ?? 30,
+      categories: game.categories ?? null,
       currentTurnUid: startingPlayer,
       turnStartTime: serverTimestamp(),
       word,
@@ -328,13 +425,19 @@ export async function promoteHost(roomCode, newHostUid) {
 // ── Play Again (reset) ──────────────────────────────────
 
 export async function resetGame(roomCode, playerOrder, players, numRounds = DEFAULT_NUM_ROUNDS) {
+  // Read current meta for settings
+  const metaSnap = await get(ref(db, `rooms/${roomCode}/meta`))
+  const meta = metaSnap.val() || {}
+  const turnDuration = meta.turnDuration ?? 30
+  const categories = meta.categories ?? null
+
   // Reset all player scores
   const playerUpdates = {}
   for (const uid of playerOrder) {
     playerUpdates[`players/${uid}/score`] = 0
   }
 
-  const { word, category } = pickWordForRound(0)
+  const { word, category } = pickWordForRound(0, categories)
   const totalRounds = numRounds * playerOrder.length
 
   await update(ref(db, `rooms/${roomCode}`), {
@@ -347,6 +450,8 @@ export async function resetGame(roomCode, playerOrder, players, numRounds = DEFA
       round: 1,
       totalRounds,
       numRounds,
+      turnDuration,
+      categories,
       currentTurnUid: playerOrder[0],
       turnStartTime: serverTimestamp(),
       word,

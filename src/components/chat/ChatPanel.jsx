@@ -10,7 +10,7 @@ export default function ChatPanel({ roomCode, uid, username, avatarId }) {
   const messagesEndRef = useRef(null)
   const [open, setOpen] = useState(false)
   const [unread, setUnread] = useState(0)
-  const prevCountRef = useRef(0)
+  const prevCountRef = useRef(null) // null = initial load not yet seen
 
   // Auto-scroll on new messages when open
   useEffect(() => {
@@ -21,6 +21,11 @@ export default function ChatPanel({ roomCode, uid, username, avatarId }) {
 
   // Track unread when closed
   useEffect(() => {
+    // Skip the very first load so existing messages don't count as unread
+    if (prevCountRef.current === null) {
+      prevCountRef.current = messages.length
+      return
+    }
     if (!open && messages.length > prevCountRef.current) {
       setUnread((n) => n + (messages.length - prevCountRef.current))
     }
@@ -44,7 +49,12 @@ export default function ChatPanel({ roomCode, uid, username, avatarId }) {
         onClick={open ? () => setOpen(false) : handleOpen}
         aria-label="Toggle chat"
       >
-        💬 Chat {unread > 0 && !open && <span className={styles.badge}>{unread}</span>}
+        💬{' '}
+        {unread > 0 && !open ? (
+          <span className={styles.badge}>{unread}</span>
+        ) : (
+          'Chat'
+        )}
       </button>
 
       {/* Panel */}

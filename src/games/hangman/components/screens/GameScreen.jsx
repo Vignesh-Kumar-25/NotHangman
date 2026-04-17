@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { guessLetter, guessWord, leaveRoom } from '../../db'
+import { guessLetter, guessWord, leaveRoom, voteToKick } from '../../db'
+import { useChat } from '@/hooks/useChat'
 import { useGameState } from '../../hooks/useGameState'
 import { useTimer } from '../../hooks/useTimer'
 import { useServerTimeOffset } from '@/hooks/useServerTimeOffset'
 import { useHostArbiter } from '../../hooks/useHostArbiter'
 import { GAME_STATES } from '../../constants/gameStates'
-import { playCorrect, playWrong, startBgMusic, stopBgMusic, isBgMusicPlaying } from '@/utils/soundManager'
-import HangmanCanvas from '../game/HangmanCanvas'
+import { playCorrect, playWrong, playRoundWin, startBgMusic, stopBgMusic, isBgMusicPlaying } from '@/utils/soundManager'
+import HangmanDeco from '../game/HangmanDeco'
 import WordDisplay from '../game/WordDisplay'
 import LetterGrid from '../game/LetterGrid'
 import WordGuessInput from '../game/WordGuessInput'
@@ -27,23 +28,45 @@ export default function GameScreen({ room, roomCode, uid }) {
   } = useGameState(room, uid)
 
   const serverTimeOffset = useServerTimeOffset()
-  const timeLeft = useTimer(game?.turnStartTime, serverTimeOffset)
+  const turnDuration = game?.turnDuration ?? meta?.turnDuration ?? 30
+  const timeLeft = useTimer(game?.turnStartTime, serverTimeOffset, turnDuration)
 
   useHostArbiter({ isHost, room, roomCode, timeLeft, uid })
 
-  const submittingRef = useRef(false)
-  const [musicOn, setMusicOn] = useState(false)
+  const chatMessages = useChat(roomCode)
+  const kickVotes = room?.kickVotes || {}
 
-  // ── Background music toggle ────────────────────────────
-  function toggleMusic() {
-    if (isBgMusicPlaying()) {
-      stopBgMusic()
-      setMusicOn(false)
-    } else {
+  const submittingRef = useRef(false)
+  const [musicMuted, setMusicMuted] = useState(false)
+  const musicStartedRef = useRef(false)
+
+  // ── Auto-start music when game enters PLAYING state ────
+  useEffect(() => {
+    if (game?.state === GAME_STATES.PLAYING && !musicStartedRef.current && !musicMuted) {
       startBgMusic()
-      setMusicOn(true)
+      musicStartedRef.current = true
+    }
+  }, [game?.state, musicMuted])
+
+  // ── Background music toggle (per player, local only) ───
+  function toggleMusic() {
+    if (musicMuted) {
+      startBgMusic()
+      setMusicMuted(false)
+    } else {
+      stopBgMusic()
+      setMusicMuted(true)
     }
   }
+
+  // Play round win sound when a round is solved
+  const prevStateRef = useRef(null)
+  useEffect(() => {
+    if (game?.state === GAME_STATES.ROUND_END && prevStateRef.current === GAME_STATES.PLAYING) {
+      playRoundWin()
+    }
+    prevStateRef.current = game?.state ?? null
+  }, [game?.state])
 
   // Stop music when unmounting
   useEffect(() => {
@@ -124,14 +147,17 @@ export default function GameScreen({ room, roomCode, uid }) {
           playerOrder={playerOrder}
           currentTurnUid={game.currentTurnUid}
           uid={uid}
+          onKick={(targetUid) => voteToKick(roomCode, uid, targetUid)}
+          kickVotes={kickVotes}
+          chatMessages={chatMessages}
         />
         <div className={styles.sidebarActions}>
           <button
             className={styles.musicBtn}
             onClick={toggleMusic}
-            title={musicOn ? 'Mute music' : 'Play music'}
+            title={musicMuted ? 'Unmute music' : 'Mute music'}
           >
-            {musicOn ? '🔊' : '🔇'}
+            {musicMuted ? '🔇' : '🔊'}
           </button>
           <button className={styles.leaveBtn} onClick={handleLeave}>
             Leave
@@ -155,7 +181,7 @@ export default function GameScreen({ room, roomCode, uid }) {
           <TurnTimer timeLeft={timeLeft} />
         </div>
 
-        <HangmanCanvas wrongGuessCount={game.wrongGuessCount ?? 0} />
+        <HangmanDeco />
 
         <WordDisplay maskedWord={maskedWord} />
 

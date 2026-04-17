@@ -23,6 +23,11 @@ export default function RoomRoute({ uid }) {
     return <Navigate to="/" replace />
   }
 
+  // Redirect kicked players
+  if (room?.players?.[uid]?.kicked) {
+    return <Navigate to="/" replace />
+  }
+
   const gameState = room?.game?.state
   const status = room?.meta?.status
 

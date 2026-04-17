@@ -1,17 +1,19 @@
 import wordsData from '../data/words.json'
 
-const CATEGORIES = ['movies', 'animals', 'countries']
+const ALL_CATEGORIES = ['movies', 'animals', 'countries']
 
-export function pickWord(category = null) {
-  const cat = category ?? CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)]
+export function pickWord(category = null, allowedCategories = null) {
+  const pool = allowedCategories?.length ? allowedCategories : ALL_CATEGORIES
+  const cat = category ?? pool[Math.floor(Math.random() * pool.length)]
   const list = wordsData[cat]
   const word = list[Math.floor(Math.random() * list.length)]
   return { word, category: cat }
 }
 
-export function pickWordForRound(roundIndex) {
-  const cat = CATEGORIES[roundIndex % CATEGORIES.length]
-  return pickWord(cat)
+export function pickWordForRound(roundIndex, allowedCategories = null) {
+  const pool = allowedCategories?.length ? allowedCategories : ALL_CATEGORIES
+  const cat = pool[roundIndex % pool.length]
+  return pickWord(cat, allowedCategories)
 }
 
 // Returns array of {char, revealed, isSpace} for each character in the word
@@ -33,5 +35,5 @@ export function normalizeGuess(input) {
 }
 
 export function getCategories() {
-  return CATEGORIES
+  return ALL_CATEGORIES
 }
