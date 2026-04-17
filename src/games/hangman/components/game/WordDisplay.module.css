@@ -1,8 +1,23 @@
 .row {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px;
   justify-content: center;
+}
+
+.wordGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.dash {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--text-muted);
+  user-select: none;
+  flex-shrink: 0;
 }
 
 .word {
