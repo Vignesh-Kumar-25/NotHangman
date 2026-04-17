@@ -115,3 +115,47 @@
   from { opacity: 0; transform: translateY(-50%) translateX(-8px) scale(0.9); }
   to   { opacity: 1; transform: translateY(-50%) translateX(0) scale(1); }
 }
+
+@media (max-width: 600px) {
+  .slot {
+    overflow: visible;
+  }
+
+  .chatCloud {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    top: calc(100% + 4px);
+    transform: none;
+    border-radius: 8px 12px 12px 12px;
+    max-width: none;
+    white-space: normal;
+    word-break: break-word;
+    animation: cloudInMobile 0.2s ease-out;
+  }
+
+  .chatCloud::before {
+    left: 12px;
+    top: -6px;
+    transform: none;
+    border: 6px solid transparent;
+    border-bottom-color: var(--border);
+    border-top: none;
+    border-right-color: transparent;
+  }
+
+  .chatCloud::after {
+    left: 13px;
+    top: -4px;
+    transform: none;
+    border: 5px solid transparent;
+    border-bottom-color: var(--bg-surface);
+    border-top: none;
+    border-right-color: transparent;
+  }
+
+  @keyframes cloudInMobile {
+    from { opacity: 0; transform: translateY(-4px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+}
