@@ -1,12 +1,23 @@
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { resetGame } from '../../db'
 import { useGameState } from '../../hooks/useGameState'
+import { playGameOver, stopBgMusic } from '@/utils/soundManager'
 import Avatar from '@/components/shared/Avatar'
 import styles from './GameOverScreen.module.css'
 
 export default function GameOverScreen({ room, roomCode, uid }) {
   const navigate = useNavigate()
   const { players, playerOrder, isHost, meta } = useGameState(room, uid)
+  const soundPlayedRef = useRef(false)
+
+  useEffect(() => {
+    if (!soundPlayedRef.current) {
+      stopBgMusic()
+      playGameOver()
+      soundPlayedRef.current = true
+    }
+  }, [])
 
   const sorted = [...playerOrder]
     .filter((id) => players[id])

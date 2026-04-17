@@ -48,6 +48,22 @@ export function playRoundWin() {
   playTone(1046.5, 0.35, 'triangle', 0.3, 0.36)
 }
 
+export function playGameOver() {
+  // Happy groovy celebration: G4 B4 D5 G5 — B5 G5 D5 — G5 (major arpeggio flourish)
+  playTone(392.0, 0.15, 'triangle', 0.3, 0.0)   // G4
+  playTone(493.9, 0.15, 'triangle', 0.3, 0.12)  // B4
+  playTone(587.3, 0.15, 'triangle', 0.3, 0.24)  // D5
+  playTone(784.0, 0.2,  'triangle', 0.3, 0.36)  // G5
+  playTone(987.8, 0.15, 'sine',     0.25, 0.52) // B5
+  playTone(784.0, 0.15, 'sine',     0.25, 0.64) // G5
+  playTone(587.3, 0.12, 'sine',     0.2, 0.76)  // D5
+  playTone(784.0, 0.5,  'triangle', 0.3, 0.88)  // G5 (long resolve)
+  // Bass notes underneath
+  playTone(196.0, 0.3, 'sine', 0.18, 0.0)   // G3
+  playTone(246.9, 0.3, 'sine', 0.18, 0.36)  // B3
+  playTone(196.0, 0.6, 'sine', 0.18, 0.72)  // G3
+}
+
 // ── Background music ───────────────────────────────────────────
 // Groovy loop using G pentatonic scale at 112 BPM
 

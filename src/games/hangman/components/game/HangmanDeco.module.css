@@ -1,0 +1,230 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.svg {
+  width: 200px;
+  height: 90px;
+}
+
+.floor {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+  opacity: 0.2;
+}
+
+.limb {
+  stroke: var(--accent-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.45;
+}
+
+/* ── Dancer 1: bounce + arm wave ─────────────── */
+
+.dancer1 {
+  animation: bounce1 1.2s ease-in-out infinite;
+}
+
+.dancer1 .armL {
+  stroke: var(--accent-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.45;
+  animation: wave1L 1.2s ease-in-out infinite;
+  transform-origin: 0px -22px;
+}
+
+.dancer1 .armR {
+  stroke: var(--accent-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.45;
+  animation: wave1R 1.2s ease-in-out infinite;
+  transform-origin: 0px -22px;
+}
+
+.dancer1 .legL {
+  stroke: var(--accent-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.45;
+  animation: kick1L 1.2s ease-in-out infinite;
+  transform-origin: 0px 0px;
+}
+
+.dancer1 .legR {
+  stroke: var(--accent-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.45;
+  animation: kick1R 1.2s ease-in-out infinite;
+  transform-origin: 0px 0px;
+}
+
+@keyframes bounce1 {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes wave1L {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(-35deg); }
+}
+
+@keyframes wave1R {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(35deg); }
+}
+
+@keyframes kick1L {
+  0%, 100% { transform: rotate(0deg); }
+  25%      { transform: rotate(15deg); }
+  75%      { transform: rotate(-15deg); }
+}
+
+@keyframes kick1R {
+  0%, 100% { transform: rotate(0deg); }
+  25%      { transform: rotate(-15deg); }
+  75%      { transform: rotate(15deg); }
+}
+
+/* ── Dancer 2: offset timing, different moves ── */
+
+.dancer2 {
+  animation: bounce2 1.6s ease-in-out 0.2s infinite;
+}
+
+.dancer2 .armL {
+  stroke: var(--accent-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.45;
+  animation: wave2L 1.6s ease-in-out 0.2s infinite;
+  transform-origin: 0px -22px;
+}
+
+.dancer2 .armR {
+  stroke: var(--accent-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.45;
+  animation: wave2R 1.6s ease-in-out 0.2s infinite;
+  transform-origin: 0px -22px;
+}
+
+.dancer2 .legL {
+  stroke: var(--accent-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.45;
+  animation: kick2L 0.8s ease-in-out infinite;
+  transform-origin: 0px 0px;
+}
+
+.dancer2 .legR {
+  stroke: var(--accent-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.45;
+  animation: kick2R 0.8s ease-in-out infinite;
+  transform-origin: 0px 0px;
+}
+
+@keyframes bounce2 {
+  0%, 100% { transform: translateY(0); }
+  30%      { transform: translateY(-8px); }
+  60%      { transform: translateY(-2px); }
+}
+
+@keyframes wave2L {
+  0%, 100% { transform: rotate(0deg); }
+  25%      { transform: rotate(-50deg); }
+  75%      { transform: rotate(10deg); }
+}
+
+@keyframes wave2R {
+  0%, 100% { transform: rotate(0deg); }
+  25%      { transform: rotate(50deg); }
+  75%      { transform: rotate(-10deg); }
+}
+
+@keyframes kick2L {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(20deg); }
+}
+
+@keyframes kick2R {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(-20deg); }
+}
+
+/* ── Dancer 3: groovy sway ───────────────────── */
+
+.dancer3 {
+  animation: bounce3 1.4s ease-in-out 0.5s infinite;
+}
+
+.dancer3 .armL {
+  stroke: var(--accent-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.45;
+  animation: wave3L 0.7s ease-in-out infinite;
+  transform-origin: 0px -22px;
+}
+
+.dancer3 .armR {
+  stroke: var(--accent-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.45;
+  animation: wave3R 0.7s ease-in-out infinite;
+  transform-origin: 0px -22px;
+}
+
+.dancer3 .legL {
+  stroke: var(--accent-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.45;
+  animation: kick3L 1.4s ease-in-out 0.5s infinite;
+  transform-origin: 0px 0px;
+}
+
+.dancer3 .legR {
+  stroke: var(--accent-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.45;
+  animation: kick3R 1.4s ease-in-out 0.5s infinite;
+  transform-origin: 0px 0px;
+}
+
+@keyframes bounce3 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25%      { transform: translateY(-4px) rotate(-3deg); }
+  75%      { transform: translateY(-4px) rotate(3deg); }
+}
+
+@keyframes wave3L {
+  0%, 100% { transform: rotate(-20deg); }
+  50%      { transform: rotate(-55deg); }
+}
+
+@keyframes wave3R {
+  0%, 100% { transform: rotate(20deg); }
+  50%      { transform: rotate(55deg); }
+}
+
+@keyframes kick3L {
+  0%, 100% { transform: rotate(5deg); }
+  50%      { transform: rotate(-18deg); }
+}
+
+@keyframes kick3R {
+  0%, 100% { transform: rotate(-5deg); }
+  50%      { transform: rotate(18deg); }
+}
