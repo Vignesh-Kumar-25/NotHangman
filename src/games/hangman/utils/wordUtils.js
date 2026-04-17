@@ -1,6 +1,6 @@
 import wordsData from '../data/words.json'
 
-const ALL_CATEGORIES = ['movies', 'animals', 'countries', 'anime', 'catchphrases', 'pokemon', 'bangalore']
+const ALL_CATEGORIES = ['movies', 'animals', 'countries', 'anime', 'catchphrases', 'pokemon'] // 'bangalore' — pending words
 
 export function pickWord(category = null, allowedCategories = null) {
   const pool = allowedCategories?.length ? allowedCategories : ALL_CATEGORIES

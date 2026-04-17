@@ -5,7 +5,7 @@ import styles from './HomeScreen.module.css'
 const GAMES = [
   {
     id: 'hangman',
-    name: 'Hangman',
+    name: 'Not Hangman',
     description: 'Guess the word letter by letter. Correct guess keeps your turn!',
     icon: '🔤',
     path: '/hangman',
