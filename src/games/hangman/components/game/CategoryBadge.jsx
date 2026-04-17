@@ -1,6 +1,6 @@
 import styles from './CategoryBadge.module.css'
 
-const ICONS = { movies: '🎬', animals: '🐾', countries: '🌍' }
+const ICONS = { movies: '🎬', animals: '🐾', countries: '🌍', anime: '⚔️', catchphrases: '💬', pokemon: '⚡', bangalore: '🏙️' }
 
 export default function CategoryBadge({ category }) {
   if (!category) return null

@@ -186,7 +186,8 @@ export default function LobbyScreen({ room, roomCode, uid }) {
         <div className={styles.categoryPicker}>
           {allCategories.map((cat) => {
             const active = selectedCategories.includes(cat)
-            const icon = cat === 'movies' ? '🎬' : cat === 'animals' ? '🐾' : '🌍'
+            const ICONS = { movies: '🎬', animals: '🐾', countries: '🌍', anime: '⚔️', catchphrases: '💬', pokemon: '⚡', bangalore: '🏙️' }
+            const icon = ICONS[cat] || '❓'
             return (
               <button
                 key={cat}
