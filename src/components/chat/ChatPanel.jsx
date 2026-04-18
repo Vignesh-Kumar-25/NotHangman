@@ -10,7 +10,9 @@ export default function ChatPanel({ roomCode, uid, username, avatarId }) {
   const messagesEndRef = useRef(null)
   const [open, setOpen] = useState(false)
   const [unread, setUnread] = useState(0)
-  const prevCountRef = useRef(null) // null = initial load not yet seen
+  const [popup, setPopup] = useState(null)
+  const prevCountRef = useRef(null)
+  const popupTimerRef = useRef(null)
 
   // Auto-scroll on new messages when open
   useEffect(() => {
@@ -19,22 +21,29 @@ export default function ChatPanel({ roomCode, uid, username, avatarId }) {
     }
   }, [messages, open])
 
-  // Track unread when closed
+  // Track unread when closed + show popup bubble
   useEffect(() => {
-    // Skip the very first load so existing messages don't count as unread
     if (prevCountRef.current === null) {
       prevCountRef.current = messages.length
       return
     }
-    if (!open && messages.length > prevCountRef.current) {
-      setUnread((n) => n + (messages.length - prevCountRef.current))
+    if (messages.length > prevCountRef.current) {
+      const latest = messages[messages.length - 1]
+      if (!open && latest && latest.uid !== uid) {
+        setUnread((n) => n + (messages.length - prevCountRef.current))
+        setPopup({ username: latest.username, text: latest.text })
+        clearTimeout(popupTimerRef.current)
+        popupTimerRef.current = setTimeout(() => setPopup(null), 4000)
+      }
     }
     prevCountRef.current = messages.length
-  }, [messages.length, open])
+  }, [messages.length, open, uid])
 
   function handleOpen() {
     setOpen(true)
     setUnread(0)
+    setPopup(null)
+    clearTimeout(popupTimerRef.current)
   }
 
   function handleSend(text) {
@@ -43,6 +52,14 @@ export default function ChatPanel({ roomCode, uid, username, avatarId }) {
 
   return (
     <>
+      {/* Chat popup bubble */}
+      {popup && !open && (
+        <div className={styles.popup} onClick={handleOpen}>
+          <span className={styles.popupName}>{popup.username}</span>
+          <span className={styles.popupText}>{popup.text}</span>
+        </div>
+      )}
+
       {/* Toggle button */}
       <button
         className={[styles.toggleBtn, open ? styles.open : ''].join(' ')}

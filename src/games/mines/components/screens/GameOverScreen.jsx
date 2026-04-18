@@ -18,6 +18,10 @@ export default function GameOverScreen({ room, roomCode, uid }) {
   const matchWinner = matchWinnerUid ? players[matchWinnerUid] : null
   const isWinner = matchWinnerUid === uid
 
+  const topWins = matchWinnerUid ? (roundWins[matchWinnerUid] || 0) : 0
+  const tiedWinners = playerOrder.filter((id) => (roundWins[id] || 0) === topWins && players[id])
+  const isTied = tiedWinners.length > 1
+
   useEffect(() => {
     stopBgMusic()
     playMatchWin()
@@ -43,7 +47,21 @@ export default function GameOverScreen({ room, roomCode, uid }) {
     <div className={styles.page}>
       <h1 className={styles.title}>Match Complete!</h1>
 
-      {matchWinner && (
+      {isTied ? (
+        <div className={styles.winnerCard}>
+          <div className={styles.tiedAvatars}>
+            {tiedWinners.map((id) => (
+              <Avatar key={id} avatarId={players[id].avatarId} size={56} />
+            ))}
+          </div>
+          <p className={styles.winnerName}>It&rsquo;s a tie!</p>
+          <p className={styles.winnerWins}>
+            {tiedWinners.map((id) => players[id].username).join(' & ')} tied with {topWins} / {totalRounds} rounds won
+          </p>
+          <span className={styles.crown}>&#128081; Co-Champions</span>
+          {tiedWinners.includes(uid) && <p className={styles.youWon}>That&rsquo;s you!</p>}
+        </div>
+      ) : matchWinner && (
         <div className={styles.winnerCard}>
           <Avatar avatarId={matchWinner.avatarId} size={72} />
           <p className={styles.winnerName}>{matchWinner.username}</p>
