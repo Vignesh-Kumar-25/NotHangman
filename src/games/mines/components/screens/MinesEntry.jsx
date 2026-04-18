@@ -38,7 +38,7 @@ export default function MinesEntry() {
         <div className={styles.iconWrap}>
           <span className={styles.icon}>&#128163;</span>
         </div>
-        <h1 className={styles.title}>Mines</h1>
+        <h1 className={styles.title}>Not Minesweeper</h1>
         <p className={styles.subtitle}>
           Take turns revealing tiles. Hit a bomb and you&rsquo;re out. Last player standing wins!
         </p>

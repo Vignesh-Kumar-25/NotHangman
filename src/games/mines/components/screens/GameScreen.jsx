@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { revealTile, skipTurn, leaveRoom, startNextRound } from '../../db'
+import { revealTile, skipTurn, leaveRoom, startNextRound, finishMatch } from '../../db'
 import { useGameState } from '../../hooks/useGameState'
 import { GAME_STATES } from '../../constants/gameConfig'
 import { startBgMusic, stopBgMusic, playTileReveal, playExplosion, playButtonClick, playRoundWin, isMuted, setMuted } from '../../utils/minesSounds'
@@ -57,15 +57,23 @@ export default function GameScreen({ room, roomCode, uid }) {
     lastActionRef.current = action.timestamp
 
     const playerName = players[action.uid]?.username || 'Someone'
-    if (action.type === 'explode') {
+    if (action.type === 'explode' || action.type === 'timeout_explode') {
       playExplosion()
-      setExplosionPopup({ playerName })
+      setExplosionPopup({ playerName, wasTimeout: action.type === 'timeout_explode' })
       setActionMsg(null)
-      const timeout = setTimeout(() => setExplosionPopup(null), 3500)
+      const isFinal = !!game.matchWinner
+      const delay = isFinal ? 2000 : 3500
+      const timeout = setTimeout(() => {
+        setExplosionPopup(null)
+        if (isFinal) finishMatch(roomCode)
+      }, delay)
       return () => clearTimeout(timeout)
     } else if (action.type === 'reveal') {
       playTileReveal()
       setActionMsg({ text: `${playerName} revealed a safe tile`, type: 'safe' })
+    } else if (action.type === 'timeout_safe') {
+      playTileReveal()
+      setActionMsg({ text: `${playerName} ran out of time, random tile triggered`, type: 'warn' })
     } else if (action.type === 'skip') {
       setActionMsg({ text: `${playerName}'s turn was skipped`, type: 'warn' })
     }
@@ -92,15 +100,15 @@ export default function GameScreen({ room, roomCode, uid }) {
     return () => clearTimeout(skipTimerRef.current)
   }, [isHost, turnTimeLimit, game.turnStartedAt, game.currentTurnIndex, roomCode, game.state])
 
-  // Host auto-advance to next round after delay
+  // Host auto-advance to next round after delay (skip if final round)
   useEffect(() => {
-    if (!isHost || !isRoundOver) return
+    if (!isHost || !isRoundOver || game.matchWinner) return
     clearTimeout(nextRoundTimerRef.current)
     nextRoundTimerRef.current = setTimeout(() => {
       startNextRound(roomCode, meta)
     }, 5000)
     return () => clearTimeout(nextRoundTimerRef.current)
-  }, [isHost, isRoundOver, roomCode, meta])
+  }, [isHost, isRoundOver, roomCode, meta, game.matchWinner])
 
   const handleTileClick = useCallback(async (index) => {
     if (!isMyTurn || clicking || amEliminated) return
@@ -165,6 +173,10 @@ export default function GameScreen({ room, roomCode, uid }) {
         </div>
       </div>
 
+      {turnTimeLimit > 0 && game.turnStartedAt && game.state === GAME_STATES.PLAYING && (
+        <TurnTimer startedAt={game.turnStartedAt} limit={turnTimeLimit} />
+      )}
+
       <div className={styles.turnBanner}>
         <span className={[
           styles.turnText,
@@ -176,11 +188,13 @@ export default function GameScreen({ room, roomCode, uid }) {
         </span>
       </div>
 
-      {actionMsg && !explosionPopup && (
-        <div className={`${styles.actionMsg} ${styles[actionMsg.type]}`}>
-          {actionMsg.text}
-        </div>
-      )}
+      <div className={styles.actionMsgSlot}>
+        {actionMsg && !explosionPopup && (
+          <div className={`${styles.actionMsg} ${styles[actionMsg.type]}`}>
+            {actionMsg.text}
+          </div>
+        )}
+      </div>
 
       <div className={styles.gameArea}>
         <div className={styles.boardCol}>
@@ -199,8 +213,6 @@ export default function GameScreen({ room, roomCode, uid }) {
             currentPlayerUid={currentPlayerUid}
             eliminated={eliminated}
             uid={uid}
-            turnStartedAt={game.turnStartedAt}
-            turnTimeLimit={game.state === GAME_STATES.PLAYING ? turnTimeLimit : 0}
             roundWins={roundWins}
           />
         </div>
@@ -212,15 +224,17 @@ export default function GameScreen({ room, roomCode, uid }) {
           <div className={styles.explosionCard}>
             <span className={styles.explosionEmoji}>&#128163;</span>
             <p className={styles.explosionText}>
-              {explosionPopup.playerName} has stepped on a mine
+              {explosionPopup.wasTimeout
+                ? `${explosionPopup.playerName} ran out of time and randomly stepped on a mine`
+                : `${explosionPopup.playerName} has stepped on a mine`}
             </p>
             <p className={styles.kaboomText}>KABOOM!</p>
           </div>
         </div>
       )}
 
-      {/* Round over overlay */}
-      {isRoundOver && !explosionPopup && (
+      {/* Round over overlay (not shown for final round) */}
+      {isRoundOver && !explosionPopup && !game.matchWinner && (
         <div className={styles.popupOverlay}>
           <div className={styles.roundOverCard}>
             <h2 className={styles.roundOverTitle}>Round {currentRound} Complete!</h2>
@@ -254,6 +268,30 @@ export default function GameScreen({ room, roomCode, uid }) {
       )}
 
       {me && <ChatPanel roomCode={roomCode} uid={uid} username={me.username} avatarId={me.avatarId} />}
+    </div>
+  )
+}
+
+function TurnTimer({ startedAt, limit }) {
+  const [remaining, setRemaining] = useState(limit)
+  const intervalRef = useRef(null)
+
+  useEffect(() => {
+    function tick() {
+      const elapsed = (Date.now() - startedAt) / 1000
+      const left = Math.max(0, Math.ceil(limit - elapsed))
+      setRemaining(left)
+    }
+    tick()
+    intervalRef.current = setInterval(tick, 250)
+    return () => clearInterval(intervalRef.current)
+  }, [startedAt, limit])
+
+  const urgent = remaining <= 5
+
+  return (
+    <div className={`${styles.timerBar} ${urgent ? styles.timerBarUrgent : ''}`}>
+      <span className={styles.timerValue}>{remaining}s</span>
     </div>
   )
 }

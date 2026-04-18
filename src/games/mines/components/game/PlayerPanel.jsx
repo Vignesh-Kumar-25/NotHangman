@@ -1,4 +1,3 @@
-import { useState, useEffect, useRef } from 'react'
 import Avatar from '@/components/shared/Avatar'
 import styles from './PlayerPanel.module.css'
 
@@ -8,8 +7,6 @@ export default function PlayerPanel({
   currentPlayerUid,
   eliminated,
   uid,
-  turnStartedAt,
-  turnTimeLimit,
   roundWins,
 }) {
   const wins = roundWins || {}
@@ -17,9 +14,6 @@ export default function PlayerPanel({
     <div className={styles.panel}>
       <div className={styles.header}>
         <h3 className={styles.title}>Players</h3>
-        {turnTimeLimit > 0 && turnStartedAt && (
-          <TurnTimer startedAt={turnStartedAt} limit={turnTimeLimit} />
-        )}
       </div>
       <div className={styles.list}>
         {playerOrder.map((id) => {
@@ -56,29 +50,5 @@ export default function PlayerPanel({
         })}
       </div>
     </div>
-  )
-}
-
-function TurnTimer({ startedAt, limit }) {
-  const [remaining, setRemaining] = useState(limit)
-  const intervalRef = useRef(null)
-
-  useEffect(() => {
-    function tick() {
-      const elapsed = (Date.now() - startedAt) / 1000
-      const left = Math.max(0, Math.ceil(limit - elapsed))
-      setRemaining(left)
-    }
-    tick()
-    intervalRef.current = setInterval(tick, 250)
-    return () => clearInterval(intervalRef.current)
-  }, [startedAt, limit])
-
-  const urgent = remaining <= 5
-
-  return (
-    <span className={`${styles.timer} ${urgent ? styles.timerUrgent : ''}`}>
-      {remaining}s
-    </span>
   )
 }

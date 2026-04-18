@@ -11,6 +11,7 @@ export const BOARD_SIZE_OPTIONS = [
   { label: '8\u00d78', rows: 8, cols: 8 },
   { label: '10\u00d710', rows: 10, cols: 10 },
   { label: '12\u00d712', rows: 12, cols: 12 },
+  { label: '16\u00d716', rows: 16, cols: 16 },
 ]
 
 export const BOMB_PRESETS = [10, 15, 20, 25, 30]

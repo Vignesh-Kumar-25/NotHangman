@@ -1,15 +1,15 @@
 # Party Games
 
-Multiplayer party games platform. Currently includes three games (Hangman, Spellcast, Tron). Built with React + Vite, Firebase Realtime Database, deployed on Netlify. Tron uses Phaser for rendering. Spellcast uses Pixi.js for rendering.
+Multiplayer party games platform. Currently includes four games (Hangman, Spellcast, Not Minesweeper, Tron). Built with React + Vite, Firebase Realtime Database, deployed on Netlify. Tron uses Phaser for rendering. Spellcast uses Pixi.js for rendering.
 
 ## Core Features
 
-- **Room-based multiplayer**: 2-6 players per room via 6-character invite codes (Hangman caps at 5, Tron at 4, Spellcast at 6)
+- **Room-based multiplayer**: 2-6 players per room via 6-character invite codes (Hangman caps at 5, Tron at 4, Spellcast at 6, Not Minesweeper at 6)
 - **Guest play**: Firebase Anonymous Authentication, no account needed
 - **In-game chat**: capped at 200 chars/message, last 50 messages loaded
 - **Avatars**: 5 SVG avatar choices per player
 - **Sound effects**: programmatic Web Audio API tones and background music via `soundManager.js`
-- **Games**: each game lives in `src/games/<name>/` with its own docs (Hangman — see `hangman.md`, Spellcast — see `spellcast_spec.md`, Tron — see `tron.md`)
+- **Games**: each game lives in `src/games/<name>/` with its own docs (Hangman — see `hangman.md`, Spellcast — see `spellcast_spec.md`, Not Minesweeper — see `mines.md`, Tron — see `tron.md`)
 
 ## Architecture
 
@@ -22,7 +22,7 @@ Multiplayer party games platform. Currently includes three games (Hangman, Spell
 ### File Structure
 ```
 src/
-├── App.jsx                          # Routes: / (home), /<game>, /room/:roomCode, /spellcast/room/:roomCode
+├── App.jsx                          # Routes: / (home), /<game>, /room/:roomCode, /spellcast/room/:roomCode, /mines/room/:roomCode
 ├── main.jsx                         # Entry point, BrowserRouter
 ├── firebase/
 │   ├── config.js                    # Firebase init, reads VITE_FIREBASE_* env vars
@@ -53,6 +53,12 @@ src/
     │   ├── components/{screens,game,lobby}/
     │   ├── constants/
     │   ├── data/
+    │   └── utils/
+    ├── mines/                       # See mines.md (Not Minesweeper)
+    │   ├── db.js
+    │   ├── hooks/
+    │   ├── components/{screens,game,lobby}/
+    │   ├── constants/
     │   └── utils/
     ├── spellcast/                   # See spellcast_spec.md
     │   ├── db.js
@@ -91,7 +97,7 @@ Path alias: `@` → `src/` (configured in `vite.config.js`).
 
 Games import platform code via `@/` alias. Platform code never imports from `src/games/`.
 
-Currently implemented: Hangman (see `hangman.md`), Spellcast (see `spellcast_spec.md`), Tron (see `tron.md`).
+Currently implemented: Hangman (see `hangman.md`), Spellcast (see `spellcast_spec.md`), Not Minesweeper (see `mines.md`), Tron (see `tron.md`).
 
 ## Data Flow
 

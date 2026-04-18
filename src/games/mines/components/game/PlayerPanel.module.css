@@ -19,22 +19,6 @@
   color: #f59e0b;
 }
 
-.timer {
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-  background: var(--bg-card);
-  padding: 2px 10px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-}
-
-.timerUrgent {
-  color: var(--accent-danger);
-  border-color: var(--accent-danger);
-  animation: pulse 0.5s ease-in-out infinite alternate;
-}
-
 .list {
   display: flex;
   flex-direction: column;
