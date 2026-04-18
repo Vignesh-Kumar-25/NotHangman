@@ -96,15 +96,20 @@ export class SpellcastRenderer {
     const col = Math.floor(x / step)
     const row = Math.floor(y / step)
 
-    if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) return null
-
-    if (!loose) {
+    if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE) {
       const tileX = col * step
       const tileY = row * step
-      if (x - tileX > TILE_SIZE || y - tileY > TILE_SIZE) return null
+      if (x - tileX <= TILE_SIZE && y - tileY <= TILE_SIZE) {
+        return { row, col }
+      }
     }
 
-    return { row, col }
+    if (!loose) return null
+
+    const halfTile = TILE_SIZE / 2
+    const nearCol = Math.max(0, Math.min(BOARD_SIZE - 1, Math.round((x - halfTile) / step)))
+    const nearRow = Math.max(0, Math.min(BOARD_SIZE - 1, Math.round((y - halfTile) / step)))
+    return { row: nearRow, col: nearCol }
   }
 
   destroy() {

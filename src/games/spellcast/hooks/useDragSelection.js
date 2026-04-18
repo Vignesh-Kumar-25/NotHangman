@@ -68,11 +68,8 @@ export function useDragSelection(rendererRef, appRef, board, enabled, dictionary
       if (path.length === 0) return
       const last = path[path.length - 1]
 
-      let pos = renderer.getTileAtPoint(e.global.x, e.global.y, false)
-      if (!pos) {
-        pos = renderer.getTileAtPoint(e.global.x, e.global.y, true)
-        if (!pos || !isAdjacent(last, pos)) return
-      }
+      const pos = renderer.getTileAtPoint(e.global.x, e.global.y)
+      if (!pos) return
 
       if (pos.row === last.row && pos.col === last.col) return
 
