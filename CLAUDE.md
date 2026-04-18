@@ -1,15 +1,15 @@
 # Party Games
 
-Multiplayer party games platform. Currently includes two games (Hangman, Tron). Built with React + Vite, Firebase Realtime Database, deployed on Netlify. Tron uses Phaser for rendering.
+Multiplayer party games platform. Currently includes three games (Hangman, Spellcast, Tron). Built with React + Vite, Firebase Realtime Database, deployed on Netlify. Tron uses Phaser for rendering. Spellcast uses Pixi.js for rendering.
 
 ## Core Features
 
-- **Room-based multiplayer**: 2-5 players per room via 6-character invite codes (Tron caps at 4)
+- **Room-based multiplayer**: 2-6 players per room via 6-character invite codes (Hangman caps at 5, Tron at 4, Spellcast at 6)
 - **Guest play**: Firebase Anonymous Authentication, no account needed
 - **In-game chat**: capped at 200 chars/message, last 50 messages loaded
 - **Avatars**: 5 SVG avatar choices per player
 - **Sound effects**: programmatic Web Audio API tones and background music via `soundManager.js`
-- **Games**: each game lives in `src/games/<name>/` with its own docs (Hangman — see `hangman.md`, Tron — see `tron.md`)
+- **Games**: each game lives in `src/games/<name>/` with its own docs (Hangman — see `hangman.md`, Spellcast — see `spellcast_spec.md`, Tron — see `tron.md`)
 
 ## Architecture
 
@@ -22,7 +22,7 @@ Multiplayer party games platform. Currently includes two games (Hangman, Tron). 
 ### File Structure
 ```
 src/
-├── App.jsx                          # Routes: / (home), /<game>, /room/:roomCode
+├── App.jsx                          # Routes: / (home), /<game>, /room/:roomCode, /spellcast/room/:roomCode
 ├── main.jsx                         # Entry point, BrowserRouter
 ├── firebase/
 │   ├── config.js                    # Firebase init, reads VITE_FIREBASE_* env vars
@@ -54,6 +54,14 @@ src/
     │   ├── constants/
     │   ├── data/
     │   └── utils/
+    ├── spellcast/                   # See spellcast_spec.md
+    │   ├── db.js
+    │   ├── renderer/                # SpellcastRenderer, TileSprite (Pixi.js)
+    │   ├── hooks/
+    │   ├── components/{screens,game,lobby}/
+    │   ├── constants/
+    │   ├── data/                    # words.txt (English dictionary, ~149K words)
+    │   └── utils/
     └── tron/                        # See tron.md
         ├── db.js
         ├── engine/                  # GameEngine, Player, InputManager, collisions, Phaser scene
@@ -83,7 +91,7 @@ Path alias: `@` → `src/` (configured in `vite.config.js`).
 
 Games import platform code via `@/` alias. Platform code never imports from `src/games/`.
 
-Currently implemented: Hangman (see `hangman.md`), Tron (see `tron.md`).
+Currently implemented: Hangman (see `hangman.md`), Spellcast (see `spellcast_spec.md`), Tron (see `tron.md`).
 
 ## Data Flow
 

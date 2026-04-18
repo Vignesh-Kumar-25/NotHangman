@@ -9,7 +9,14 @@
       "Bash(npm run *)",
       "Bash(npx vite *)",
       "Bash(npm ls *)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(cat)",
+      "Bash(python /tmp/gen_words.py \"src/games/spellcast/data/words.txt\")",
+      "Bash(grep *)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Read(//tmp/**)",
+      "Bash(awk 'length >= 3' /c/Users/Vignesh/Desktop/wannaBEhangman/src/games/spellcast/data/words.txt)",
+      "Bash(timeout 5 cat C:/Users/faisa/AppData/Local/Temp/claude/C--01-Projects-NotHangman/469e7a74-8845-4786-8e53-a1288a4a25ca/tasks/bua7pjn4m.output)"
     ]
   }
 }

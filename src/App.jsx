@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import HomeScreen from './components/screens/HomeScreen'
@@ -6,8 +6,11 @@ import HangmanEntry from './games/hangman/components/screens/HangmanEntry'
 import RoomRoute from './games/hangman/components/screens/RoomRoute'
 import LoadingSpinner from './components/shared/LoadingSpinner'
 
-const TronEntry = lazy(() => import('./games/tron/components/screens/TronEntry'))
-const TronRoomRoute = lazy(() => import('./games/tron/components/screens/TronRoomRoute'))
+const SpellcastEntry = lazy(() => import('./games/spellcast/components/screens/SpellcastEntry'))
+const SpellcastRoomRoute = lazy(() => import('./games/spellcast/components/screens/SpellcastRoomRoute'))
+const MinesEntry = lazy(() => import('./games/mines/components/screens/MinesEntry'))
+const MinesRoomRoute = lazy(() => import('./games/mines/components/screens/MinesRoomRoute'))
+
 
 function Loading() {
   return (
@@ -28,8 +31,12 @@ export default function App() {
         <Route path="/" element={<HomeScreen />} />
         <Route path="/hangman" element={<HangmanEntry />} />
         <Route path="/room/:roomCode" element={<RoomRoute uid={uid} />} />
-        <Route path="/tron" element={<TronEntry />} />
-        <Route path="/tron/room/:roomCode" element={<TronRoomRoute uid={uid} />} />
+        <Route path="/spellcast" element={<SpellcastEntry />} />
+        <Route path="/spellcast/room/:roomCode" element={<SpellcastRoomRoute uid={uid} />} />
+        <Route path="/mines" element={<MinesEntry />} />
+        <Route path="/mines/room/:roomCode" element={<MinesRoomRoute uid={uid} />} />
+        <Route path="/tron" element={<Navigate to="/" replace />} />
+        <Route path="/tron/room/:roomCode" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
