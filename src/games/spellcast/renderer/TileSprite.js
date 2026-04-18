@@ -7,6 +7,7 @@ export class TileSprite extends PIXI.Container {
     this.row = row
     this.col = col
     this._selected = false
+    this._selectedValid = false
     this._hinted = false
 
     this.bg = new PIXI.Graphics()
@@ -81,8 +82,9 @@ export class TileSprite extends PIXI.Container {
     this._refreshBg()
   }
 
-  setSelected(val) {
+  setSelected(val, valid = false) {
     this._selected = val
+    this._selectedValid = valid
     this._refreshBg()
   }
 
@@ -93,7 +95,7 @@ export class TileSprite extends PIXI.Container {
 
   _refreshBg() {
     if (this._selected) {
-      this._drawBg(COLORS.tileSelected)
+      this._drawBg(this._selectedValid ? COLORS.tileSelectedValid : COLORS.tileSelected)
     } else if (this._hinted) {
       this._drawBg(COLORS.tileHint)
     } else {

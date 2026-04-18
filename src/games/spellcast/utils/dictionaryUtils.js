@@ -1,4 +1,5 @@
 import wordListRaw from '../data/words.txt?raw'
+import { MIN_WORD_LENGTH } from '../constants/gameConfig'
 
 let cachedDict = null
 let cachedTrie = null
@@ -31,7 +32,7 @@ export function loadDictionary() {
   const words = wordListRaw
     .split(/\r?\n/)
     .map(w => w.trim().toUpperCase())
-    .filter(w => w.length >= 2)
+    .filter(w => w.length >= 3)
 
   cachedDict = new Set(words)
   cachedTrie = buildTrie(words)
@@ -40,5 +41,5 @@ export function loadDictionary() {
 }
 
 export function isValidWord(word, dictionary) {
-  return word.length >= 2 && dictionary.has(word.toUpperCase())
+  return word.length >= MIN_WORD_LENGTH && dictionary.has(word.toUpperCase())
 }

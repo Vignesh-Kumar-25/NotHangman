@@ -2,7 +2,7 @@ export const BOARD_SIZE = 5
 export const NUM_ROUNDS = 5
 export const MAX_PLAYERS = 6
 export const MIN_PLAYERS = 2
-export const MIN_WORD_LENGTH = 2
+export const MIN_WORD_LENGTH = 3
 
 export const TURN_DURATION = 60
 export const TURN_DURATION_OPTIONS = [30, 45, 60, 90, 120]

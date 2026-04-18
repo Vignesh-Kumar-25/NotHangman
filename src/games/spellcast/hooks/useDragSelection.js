@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { BOARD_SIZE } from '../constants/gameConfig'
+import { BOARD_SIZE, MIN_WORD_LENGTH } from '../constants/gameConfig'
+import { isValidWord } from '../utils/dictionaryUtils'
 
 function isAdjacent(a, b) {
   return Math.abs(a.row - b.row) <= 1 &&
@@ -11,11 +12,15 @@ function pathContains(path, row, col) {
   return path.some(p => p.row === row && p.col === col)
 }
 
-export function useDragSelection(rendererRef, appRef, board, enabled) {
+export function useDragSelection(rendererRef, appRef, board, enabled, dictionary) {
   const [selectedPath, setSelectedPath] = useState([])
   const [isDragging, setIsDragging] = useState(false)
   const pathRef = useRef([])
   const draggingRef = useRef(false)
+  const dictRef = useRef(dictionary)
+  const boardRef = useRef(board)
+  dictRef.current = dictionary
+  boardRef.current = board
 
   const clearSelection = useCallback(() => {
     setSelectedPath([])
@@ -34,6 +39,17 @@ export function useDragSelection(rendererRef, appRef, board, enabled) {
       return
     }
 
+    function getPathWord(path) {
+      const b = boardRef.current
+      if (!b) return ''
+      return path.map(({ row, col }) => b[row]?.[col]?.letter || '').join('')
+    }
+
+    function isPathValid(path) {
+      const word = getPathWord(path)
+      return word.length >= MIN_WORD_LENGTH && dictRef.current && isValidWord(word, dictRef.current)
+    }
+
     function handlePointerDown(e) {
       const pos = renderer.getTileAtPoint(e.global.x, e.global.y)
       if (!pos) return
@@ -42,18 +58,22 @@ export function useDragSelection(rendererRef, appRef, board, enabled) {
       setIsDragging(true)
       pathRef.current = [pos]
       setSelectedPath([pos])
-      renderer.highlightPath([pos])
+      renderer.highlightPath([pos], false)
     }
 
     function handlePointerMove(e) {
       if (!draggingRef.current) return
-      const pos = renderer.getTileAtPoint(e.global.x, e.global.y)
-      if (!pos) return
 
       const path = pathRef.current
       if (path.length === 0) return
-
       const last = path[path.length - 1]
+
+      let pos = renderer.getTileAtPoint(e.global.x, e.global.y, false)
+      if (!pos) {
+        pos = renderer.getTileAtPoint(e.global.x, e.global.y, true)
+        if (!pos || !isAdjacent(last, pos)) return
+      }
+
       if (pos.row === last.row && pos.col === last.col) return
 
       // Backtracking: if hovering over the second-to-last tile, pop
@@ -63,7 +83,7 @@ export function useDragSelection(rendererRef, appRef, board, enabled) {
           const newPath = path.slice(0, -1)
           pathRef.current = newPath
           setSelectedPath([...newPath])
-          renderer.highlightPath(newPath)
+          renderer.highlightPath(newPath, isPathValid(newPath))
           return
         }
       }
@@ -74,7 +94,7 @@ export function useDragSelection(rendererRef, appRef, board, enabled) {
       const newPath = [...path, pos]
       pathRef.current = newPath
       setSelectedPath([...newPath])
-      renderer.highlightPath(newPath)
+      renderer.highlightPath(newPath, isPathValid(newPath))
     }
 
     function handlePointerUp() {

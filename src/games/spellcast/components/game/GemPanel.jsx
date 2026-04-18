@@ -3,7 +3,7 @@ import { SHUFFLE_COST, SWAP_COST, HINT_COST } from '../../constants/gameConfig'
 import styles from './GemPanel.module.css'
 
 export default function GemPanel({ gems, isMyTurn, usedAbility, onShuffle, onSwap, onHint }) {
-  const disabled = !isMyTurn || usedAbility !== null
+  const disabled = !isMyTurn || !!usedAbility
 
   return (
     <div className={styles.panel}>

@@ -43,9 +43,9 @@ export default function GameScreen({ room, roomCode, uid }) {
   const { appRef, rendererRef, containerCallbackRef } = useGameRenderer()
 
   const board = game?.board
-  const enabled = isMyTurn && game?.state === GAME_STATES.PLAYING && !dictLoading
+  const enabled = isMyTurn && game?.state === GAME_STATES.PLAYING && !dictLoading && timeLeft > 0
   const { selectedPath, selectedWord, isDragging, clearSelection } = useDragSelection(
-    rendererRef, appRef, board, enabled
+    rendererRef, appRef, board, enabled, dictionary
   )
 
   const submittingRef = useRef(false)
