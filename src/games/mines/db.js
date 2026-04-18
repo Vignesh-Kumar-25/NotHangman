@@ -143,6 +143,7 @@ export async function startGame(roomCode, playerOrder, meta) {
       roundResults: null,
       roundWinner: null,
       matchWinner: null,
+      roundStartPlayerOffset: 0,
     },
   })
 }
@@ -201,8 +202,7 @@ export async function revealTile(roomCode, uid, tileIndex) {
           if (w > maxW) { maxW = w; matchWinner = pid }
         }
         updates['game/matchWinner'] = matchWinner
-        updates['game/state'] = GAME_STATES.FINISHED
-        updates['meta/status'] = 'finished'
+        updates['game/state'] = GAME_STATES.ROUND_OVER
       } else {
         updates['game/state'] = GAME_STATES.ROUND_OVER
       }
@@ -236,13 +236,17 @@ export async function startNextRound(roomCode, meta) {
 
   const nextRound = (room.game.currentRound || 1) + 1
   const bombs = makeBombs(meta)
+  const playerOrder = Array.isArray(room.playerOrder)
+    ? room.playerOrder
+    : Object.values(room.playerOrder || {})
+  const startIndex = (nextRound - 1) % playerOrder.length
 
   await update(roomRef, {
     'game/state': GAME_STATES.PLAYING,
     'game/currentRound': nextRound,
     'game/bombs': bombs,
     'game/revealed': null,
-    'game/currentTurnIndex': 0,
+    'game/currentTurnIndex': startIndex,
     'game/eliminatedPlayers': null,
     'game/turnStartedAt': Date.now(),
     'game/lastAction': null,
@@ -256,24 +260,81 @@ export async function skipTurn(roomCode) {
   if (!snap.exists()) return
   const room = snap.val()
 
-  const { game } = room
+  const { game, meta } = room
   if (game.state !== GAME_STATES.PLAYING) return
 
   const playerOrder = Array.isArray(room.playerOrder)
     ? room.playerOrder
     : Object.values(room.playerOrder || {})
-  const eliminated = game.eliminatedPlayers || {}
-  const nextIndex = getNextAlivePlayerIndex(game.currentTurnIndex, playerOrder, eliminated)
+  const uid = playerOrder[game.currentTurnIndex]
+  const revealed = game.revealed || {}
+  const rows = meta.boardRows
+  const cols = meta.boardCols
+  const total = rows * cols
 
-  await update(roomRef, {
-    'game/currentTurnIndex': nextIndex,
-    'game/turnStartedAt': Date.now(),
-    'game/lastAction': {
-      type: 'skip',
-      uid: playerOrder[game.currentTurnIndex],
-      timestamp: Date.now(),
-    },
-  })
+  const unrevealed = []
+  for (let i = 0; i < total; i++) {
+    if (revealed[i] === undefined) unrevealed.push(i)
+  }
+  if (unrevealed.length === 0) return
+
+  const randomIndex = unrevealed[Math.floor(Math.random() * unrevealed.length)]
+  const bombSet = new Set(game.bombs || [])
+  const eliminated = game.eliminatedPlayers || {}
+  const updates = {}
+
+  if (bombSet.has(randomIndex)) {
+    updates[`game/revealed/${randomIndex}`] = -1
+    updates[`game/eliminatedPlayers/${uid}`] = true
+    updates['game/lastAction'] = {
+      type: 'timeout_explode', index: randomIndex, uid, timestamp: Date.now(),
+    }
+
+    const newEliminated = { ...eliminated, [uid]: true }
+    const alivePlayers = playerOrder.filter(
+      (id) => !newEliminated[id] && room.players[id]?.connected !== false
+    )
+
+    if (alivePlayers.length <= 1) {
+      const roundWinner = alivePlayers[0] || null
+      const currentRound = game.currentRound || 1
+      const totalRounds = game.totalRounds || 1
+      const prevWins = game.roundWins || {}
+      const newWins = { ...prevWins }
+      if (roundWinner) newWins[roundWinner] = (newWins[roundWinner] || 0) + 1
+
+      updates['game/roundWinner'] = roundWinner
+      updates['game/roundWins'] = newWins
+      updates[`game/roundResults/${currentRound}`] = roundWinner
+
+      if (currentRound >= totalRounds) {
+        let matchWinner = null
+        let maxW = 0
+        for (const [pid, w] of Object.entries(newWins)) {
+          if (w > maxW) { maxW = w; matchWinner = pid }
+        }
+        updates['game/matchWinner'] = matchWinner
+      }
+      updates['game/state'] = GAME_STATES.ROUND_OVER
+    } else {
+      const nextIndex = getNextAlivePlayerIndex(game.currentTurnIndex, playerOrder, newEliminated)
+      updates['game/currentTurnIndex'] = nextIndex
+      updates['game/turnStartedAt'] = Date.now()
+    }
+  } else {
+    const newRevealed = floodReveal(randomIndex, bombSet, rows, cols, revealed)
+    for (const [idx, count] of Object.entries(newRevealed)) {
+      updates[`game/revealed/${idx}`] = count
+    }
+    updates['game/lastAction'] = {
+      type: 'timeout_safe', index: randomIndex, uid, timestamp: Date.now(),
+    }
+    const nextIndex = getNextAlivePlayerIndex(game.currentTurnIndex, playerOrder, eliminated)
+    updates['game/currentTurnIndex'] = nextIndex
+    updates['game/turnStartedAt'] = Date.now()
+  }
+
+  await update(roomRef, updates)
 }
 
 export async function resetGame(roomCode, playerOrder, meta) {
@@ -294,7 +355,15 @@ export async function resetGame(roomCode, playerOrder, meta) {
       roundResults: null,
       roundWinner: null,
       matchWinner: null,
+      roundStartPlayerOffset: 0,
     },
+  })
+}
+
+export async function finishMatch(roomCode) {
+  await update(ref(db, `rooms/${roomCode}`), {
+    'game/state': GAME_STATES.FINISHED,
+    'meta/status': 'finished',
   })
 }
 

@@ -47,7 +47,7 @@ export default function LobbyScreen({ room, roomCode, uid }) {
 
   return (
     <div className={styles.page}>
-      <h1 className={styles.title}>Mines Lobby</h1>
+      <h1 className={styles.title}>Not Minesweeper Lobby</h1>
 
       <div className={styles.roomCodeSection}>
         <span className={styles.roomCodeLabel}>Room Code</span>

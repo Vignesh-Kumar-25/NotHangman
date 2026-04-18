@@ -12,28 +12,12 @@ const GAMES = [
     available: true,
   },
   {
-    id: 'spellcast',
-    name: 'Spellcast',
-    description: 'Build words on a shared grid. Use gems for powerful abilities!',
-    icon: '\u2728',
-    path: '/spellcast',
-    available: true,
-  },
-  {
     id: 'mines',
-    name: 'Mines',
+    name: 'Not Minesweeper',
     description: 'Take turns revealing tiles. Hit a bomb and you\'re out!',
     icon: '\uD83D\uDCA3',
     path: '/mines',
     available: true,
-  },
-  {
-    id: 'tron',
-    name: 'Tron',
-    description: 'Drive your light cycle and trap opponents in your trail!',
-    icon: '🏍️',
-    path: '/tron',
-    available: false,
   },
 ]
 
@@ -72,6 +56,10 @@ export default function HomeScreen() {
             {!game.available && <span className={styles.cardBadge}>Soon</span>}
           </button>
         ))}
+        <div className={styles.comingSoon}>
+          <span className={styles.comingSoonIcon}>🎮</span>
+          <p className={styles.comingSoonText}>More games coming soon</p>
+        </div>
       </div>
     </div>
   )

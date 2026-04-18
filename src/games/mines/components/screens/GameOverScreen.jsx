@@ -61,12 +61,20 @@ export default function GameOverScreen({ room, roomCode, uid }) {
           const isMe = id === uid
           const isWin = id === matchWinnerUid
           const medals = ['\uD83E\uDD47', '\uD83E\uDD48', '\uD83E\uDD49']
+          const wins = roundWins[id] || 0
+          let medalIndex = i
+          for (let j = 0; j < i; j++) {
+            if ((roundWins[sorted[j]] || 0) === wins) {
+              medalIndex = j
+              break
+            }
+          }
           return (
             <div
               key={id}
               className={[styles.row, isWin ? styles.winnerRow : ''].join(' ')}
             >
-              <span className={styles.rank}>{medals[i] ?? `${i + 1}.`}</span>
+              <span className={styles.rank}>{medals[medalIndex] ?? `${medalIndex + 1}.`}</span>
               <Avatar avatarId={player.avatarId} size={32} />
               <span className={styles.name}>
                 {player.username}

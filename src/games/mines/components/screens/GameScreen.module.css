@@ -61,8 +61,8 @@
   background: none;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 1rem;
-  padding: 3px 8px;
+  font-size: 1.5rem;
+  padding: 6px 12px;
   cursor: pointer;
   transition: border-color 0.15s;
   line-height: 1;
@@ -90,6 +90,28 @@
   border-color: var(--accent-danger);
 }
 
+.timerBar {
+  text-align: center;
+  padding: 6px 0;
+}
+
+.timerValue {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 4px 24px;
+  letter-spacing: 0.05em;
+}
+
+.timerBarUrgent .timerValue {
+  color: var(--accent-danger);
+  border-color: var(--accent-danger);
+  animation: pulse 0.5s ease-in-out infinite alternate;
+}
+
 .turnBanner {
   text-align: center;
   padding: 4px 0;
@@ -114,6 +136,13 @@
 
 .turnTextRound {
   color: var(--accent-gold);
+}
+
+.actionMsgSlot {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .actionMsg {
