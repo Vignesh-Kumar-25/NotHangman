@@ -20,6 +20,14 @@ const GAMES = [
     available: true,
   },
   {
+    id: 'mines',
+    name: 'Mines',
+    description: 'Take turns revealing tiles. Hit a bomb and you\'re out!',
+    icon: '\uD83D\uDCA3',
+    path: '/mines',
+    available: true,
+  },
+  {
     id: 'tron',
     name: 'Tron',
     description: 'Drive your light cycle and trap opponents in your trail!',

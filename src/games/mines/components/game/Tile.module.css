@@ -1,0 +1,84 @@
+.tile {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 4px;
+  font-family: var(--font-display);
+  font-size: clamp(0.7rem, 2.5vw, 1.1rem);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+  position: relative;
+  outline: none;
+}
+
+.hidden {
+  background: linear-gradient(145deg, #2a3158, #1f2547);
+  box-shadow:
+    inset 0 1px 0 #3a4578,
+    inset 0 -1px 0 #151a30,
+    0 2px 4px #0003;
+  cursor: default;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:hover {
+  background: linear-gradient(145deg, #353d6a, #2a3158);
+  box-shadow:
+    inset 0 1px 0 #4a5588,
+    inset 0 -1px 0 #1a2040,
+    0 0 12px #f59e0b44;
+  transform: scale(1.05);
+}
+
+.clickable:active {
+  transform: scale(0.95);
+  box-shadow:
+    inset 0 1px 0 #252b4a,
+    0 1px 2px #0003;
+}
+
+.revealed {
+  background: var(--bg-base);
+  box-shadow: inset 0 0 0 1px #1a1a2e;
+  cursor: default;
+  animation: revealPop 0.2s ease-out;
+}
+
+.empty {
+  background: #0d0d18;
+}
+
+.bomb {
+  background: radial-gradient(circle, #ef444466, #ef444422);
+  box-shadow: inset 0 0 0 1px #ef444455;
+  animation: explode 0.4s ease-out;
+}
+
+.bombIcon {
+  font-size: clamp(0.8rem, 2.8vw, 1.3rem);
+  filter: drop-shadow(0 0 4px #ef4444);
+  line-height: 1;
+}
+
+.number {
+  font-weight: 900;
+  text-shadow: 0 0 8px currentColor;
+  line-height: 1;
+}
+
+@keyframes revealPop {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes explode {
+  0% { transform: scale(0.5); background: radial-gradient(circle, #ef4444cc, #ef444466); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); background: radial-gradient(circle, #ef444466, #ef444422); }
+}
