@@ -12,12 +12,20 @@ const GAMES = [
     available: true,
   },
   {
+    id: 'spellcast',
+    name: 'Spellcast',
+    description: 'Build words on a shared grid. Use gems for powerful abilities!',
+    icon: '\u2728',
+    path: '/spellcast',
+    available: true,
+  },
+  {
     id: 'tron',
     name: 'Tron',
     description: 'Drive your light cycle and trap opponents in your trail!',
     icon: '🏍️',
     path: '/tron',
-    available: true,
+    available: false,
   },
 ]
 

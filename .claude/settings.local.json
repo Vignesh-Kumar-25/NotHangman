@@ -9,7 +9,9 @@
       "Bash(npm run *)",
       "Bash(npx vite *)",
       "Bash(npm ls *)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(cat)",
+      "Bash(python /tmp/gen_words.py \"src/games/spellcast/data/words.txt\")"
     ]
   }
 }

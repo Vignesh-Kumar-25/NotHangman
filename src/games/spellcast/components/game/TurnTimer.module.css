@@ -1,0 +1,37 @@
+.timer {
+  position: relative;
+  width: 52px;
+  height: 52px;
+}
+
+.timer svg {
+  transform: rotate(-90deg);
+}
+
+.timerCircleBg {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 4;
+}
+
+.timerCircle {
+  fill: none;
+  stroke: var(--accent-primary);
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.25s linear, stroke 0.3s;
+}
+
+.low {
+  stroke: var(--accent-danger);
+}
+
+.timerText {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--text-primary);
+}

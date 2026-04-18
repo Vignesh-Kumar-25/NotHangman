@@ -1,0 +1,37 @@
+.display {
+  text-align: center;
+  padding: 8px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.word {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--accent-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.score {
+  color: var(--accent-success);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.player {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
