@@ -1,0 +1,192 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 40px 16px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  background: linear-gradient(135deg, #a78bfa, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.winnerCard {
+  text-align: center;
+  background: var(--bg-surface);
+  border: 2px solid #a78bfa;
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  width: 100%;
+  box-shadow: 0 0 30px #7c3aed22;
+  animation: winGlow 2s ease-in-out infinite alternate;
+}
+
+.winnerName {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin-top: 12px;
+}
+
+.winnerSub {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.crown {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--accent-gold);
+}
+
+.youWon {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: var(--accent-secondary);
+  font-weight: 700;
+}
+
+.drawCard {
+  text-align: center;
+  background: var(--bg-surface);
+  border: 2px solid var(--text-muted);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  width: 100%;
+}
+
+.drawAvatars {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.drawText {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--text-primary);
+  margin-top: 12px;
+}
+
+.drawIcon {
+  display: block;
+  font-size: 1.5rem;
+  margin-top: 8px;
+  color: var(--text-secondary);
+}
+
+.matchInfo {
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.infoTitle {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: #a78bfa;
+  margin-bottom: 12px;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 2px;
+}
+
+.infoRow:nth-child(odd) {
+  background: var(--bg-card);
+}
+
+.infoLabel {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.infoVal {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.playAgainBtn {
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 1.1rem;
+  padding: 14px;
+  width: 100%;
+  cursor: pointer;
+  box-shadow: 0 4px 16px #7c3aed44;
+  transition: box-shadow 0.15s, transform 0.1s;
+}
+.playAgainBtn:hover {
+  box-shadow: 0 6px 24px #7c3aed66;
+  transform: translateY(-1px);
+}
+
+.newRoomBtn {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 12px;
+  width: 100%;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.newRoomBtn:hover {
+  border-color: #a78bfa;
+}
+
+.waitMsg {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 0.95rem;
+}
+
+.leaveBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.leaveBtn:hover { color: var(--accent-danger); }
+
+@keyframes winGlow {
+  from { box-shadow: 0 0 20px #7c3aed11; }
+  to { box-shadow: 0 0 40px #7c3aed33; }
+}

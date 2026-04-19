@@ -19,6 +19,14 @@ const GAMES = [
     path: '/mines',
     available: true,
   },
+  {
+    id: 'chess',
+    name: 'Mini Chess',
+    description: 'Strategic chess on a compact 5\u00d78 board. Checkmate to win!',
+    icon: '\u265B',
+    path: '/chess',
+    available: true,
+  },
 ]
 
 export default function HomeScreen() {
