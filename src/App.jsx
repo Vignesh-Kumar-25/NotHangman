@@ -8,6 +8,8 @@ import LoadingSpinner from './components/shared/LoadingSpinner'
 
 const MinesEntry = lazy(() => import('./games/mines/components/screens/MinesEntry'))
 const MinesRoomRoute = lazy(() => import('./games/mines/components/screens/MinesRoomRoute'))
+const ChessEntry = lazy(() => import('./games/chess/components/screens/ChessEntry'))
+const ChessRoomRoute = lazy(() => import('./games/chess/components/screens/ChessRoomRoute'))
 const SpellcastEntry = lazy(() => import('./games/spellcast/components/screens/SpellcastEntry'))
 const SpellcastRoomRoute = lazy(() => import('./games/spellcast/components/screens/SpellcastRoomRoute'))
 
@@ -33,6 +35,8 @@ export default function App() {
         <Route path="/room/:roomCode" element={<RoomRoute uid={uid} />} />
         <Route path="/mines" element={<MinesEntry />} />
         <Route path="/mines/room/:roomCode" element={<MinesRoomRoute uid={uid} />} />
+        <Route path="/chess" element={<ChessEntry />} />
+        <Route path="/chess/room/:roomCode" element={<ChessRoomRoute uid={uid} />} />
         <Route path="/spellcast" element={<SpellcastEntry uid={uid} />} />
         <Route path="/spellcast/room/:roomCode" element={<SpellcastRoomRoute uid={uid} />} />
         <Route path="/tron" element={<Navigate to="/" replace />} />

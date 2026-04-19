@@ -20,6 +20,11 @@ const GAMES = [
     available: true,
   },
   {
+    id: 'chess',
+    name: 'Mini Chess',
+    description: 'Strategic chess on a compact 5\u00d78 board. Checkmate to win!',
+    icon: '\u265B',
+    path: '/chess',
     id: 'spellcast',
     name: 'Not Spellcast',
     description: 'Trace adjacent runes to cast words on a board that keeps rewriting itself.',

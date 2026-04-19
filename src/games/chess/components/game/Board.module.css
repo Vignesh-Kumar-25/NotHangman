@@ -1,0 +1,138 @@
+.boardContainer {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  border: 3px solid #4a3a6a;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px #0008, 0 0 24px #7c3aed22;
+  background: #2a1f3e;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.rankLabel {
+  width: 22px;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.fileLabels {
+  display: flex;
+  height: 18px;
+  align-items: center;
+}
+
+.fileLabel {
+  flex: 1;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.square {
+  width: clamp(48px, 14vw, 72px);
+  height: clamp(48px, 14vw, 72px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.light {
+  background: #c8b4e0;
+}
+
+.dark {
+  background: #7a5aaa;
+}
+
+.selected {
+  background: #b8a040 !important;
+  box-shadow: inset 0 0 0 2px #d4c050;
+}
+
+/* Darken the tile for last-move highlight instead of replacing the color */
+.lastMove::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.check {
+  background: radial-gradient(circle, #ef4444cc 0%, #ef444466 60%, transparent 100%) !important;
+}
+
+/* ── Piece styling: true black vs white ─────────────── */
+
+.piece {
+  font-size: clamp(1.8rem, 8vw, 2.8rem);
+  line-height: 1;
+  user-select: none;
+  transition: transform 0.15s ease;
+  z-index: 1;
+}
+
+.whitePiece {
+  color: #fff;
+  -webkit-text-stroke: 1px #555;
+  paint-order: stroke fill;
+  filter: drop-shadow(1px 2px 2px #0008);
+}
+
+.blackPiece {
+  color: #1a1a2e;
+  -webkit-text-stroke: 1px #888;
+  paint-order: stroke fill;
+  filter: drop-shadow(1px 2px 2px #0004);
+}
+
+.dot {
+  position: absolute;
+  width: 25%;
+  height: 25%;
+  border-radius: 50%;
+  background: #00000033;
+  z-index: 2;
+}
+
+.captureRing {
+  position: absolute;
+  width: 85%;
+  height: 85%;
+  border-radius: 50%;
+  border: 5px solid #00000033;
+  z-index: 2;
+}
+
+@media (max-width: 480px) {
+  .rankLabel {
+    width: 16px;
+    font-size: 0.6rem;
+  }
+  .fileLabels {
+    height: 14px;
+  }
+  .fileLabel {
+    font-size: 0.6rem;
+  }
+}

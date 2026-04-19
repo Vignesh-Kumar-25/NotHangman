@@ -1,0 +1,59 @@
+.panel {
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: #a78bfa;
+  margin-bottom: 12px;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.options {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.option {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.option:hover:not(:disabled) {
+  border-color: #a78bfa;
+  color: #a78bfa;
+}
+.option:disabled {
+  cursor: default;
+}
+
+.optionActive {
+  background: #7c3aed22;
+  border-color: #7c3aed;
+  color: #a78bfa;
+}
