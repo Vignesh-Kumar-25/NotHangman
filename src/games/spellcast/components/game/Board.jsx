@@ -48,7 +48,7 @@ export default function Board({
   const invalid = new Set(invalidPath || [])
   const lastMove = new Set(lastMoveTiles || [])
   const activePointerIdRef = useRef(null)
-  const activeTouchIdRef = useRef(null)
+  const activeTouchPointerIdRef = useRef(null)
   const ignorePointerUntilRef = useRef(0)
   const localArrowMap = new Map(path.map((tileIndex, pathIndex) => [
     tileIndex,
@@ -78,6 +78,10 @@ export default function Board({
       if (activePointerIdRef.current !== null && event.pointerId !== activePointerIdRef.current) {
         return
       }
+      if (activeTouchPointerIdRef.current === event.pointerId) {
+        activeTouchPointerIdRef.current = null
+        ignorePointerUntilRef.current = Date.now() + 600
+      }
       activePointerIdRef.current = null
       onSelectionEnd(event.pointerId)
     }
@@ -92,34 +96,6 @@ export default function Board({
     }
   }, [onSelectionEnd])
 
-  useEffect(() => {
-    function handleWindowTouchMove(event) {
-      if (activeTouchIdRef.current === null) return
-      const touch = Array.from(event.touches).find((entry) => entry.identifier === activeTouchIdRef.current)
-      if (!touch) return
-      event.preventDefault()
-      handlePointerMoveAtPoint(touch.clientX, touch.clientY, document.elementFromPoint(touch.clientX, touch.clientY))
-    }
-
-    function handleWindowTouchEnd(event) {
-      if (activeTouchIdRef.current === null) return
-      const endedTouch = Array.from(event.changedTouches).find((entry) => entry.identifier === activeTouchIdRef.current)
-      if (!endedTouch) return
-      activeTouchIdRef.current = null
-      ignorePointerUntilRef.current = Date.now() + 600
-      onSelectionEnd()
-    }
-
-    window.addEventListener('touchmove', handleWindowTouchMove, { passive: false })
-    window.addEventListener('touchend', handleWindowTouchEnd, { passive: false })
-    window.addEventListener('touchcancel', handleWindowTouchEnd, { passive: false })
-    return () => {
-      window.removeEventListener('touchmove', handleWindowTouchMove)
-      window.removeEventListener('touchend', handleWindowTouchEnd)
-      window.removeEventListener('touchcancel', handleWindowTouchEnd)
-    }
-  }, [onSelectionEnd])
-
   function handlePointerMoveAtPoint(clientX, clientY, fallbackTarget) {
     const element = document.elementFromPoint(clientX, clientY)
     const index = resolveTileIndex(element) ?? resolveTileIndex(fallbackTarget)
@@ -130,16 +106,8 @@ export default function Board({
   return (
     <div
       className={styles.board}
-      onPointerMove={(event) => handlePointerMoveAtPoint(event.clientX, event.clientY, event.target)}
-      onTouchStart={(event) => {
-        const touch = event.changedTouches[0]
-        if (!touch) return
-        const index = resolveTileIndex(document.elementFromPoint(touch.clientX, touch.clientY))
-        if (index === null) return
-        event.preventDefault()
-        activeTouchIdRef.current = touch.identifier
-        ignorePointerUntilRef.current = Date.now() + 600
-        onTilePointerDown(index, null)
+      onPointerMove={(event) => {
+        handlePointerMoveAtPoint(event.clientX, event.clientY, event.target)
       }}
     >
       {rows.flat().map((letter, index) => {
@@ -165,11 +133,15 @@ export default function Board({
             className={className}
             data-tile-index={index}
             onPointerDown={(event) => {
-              if (Date.now() < ignorePointerUntilRef.current) return
+              if (event.pointerType === 'touch') {
+                activeTouchPointerIdRef.current = event.pointerId
+              }
               activePointerIdRef.current = event.pointerId
               onTilePointerDown(index, event.pointerId)
             }}
-            onPointerEnter={() => onTilePointerEnter(index)}
+            onPointerEnter={() => {
+              onTilePointerEnter(index)
+            }}
             onClick={() => {
               if (Date.now() < ignorePointerUntilRef.current) return
               onTileClick(index)
