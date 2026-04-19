@@ -1,6 +1,6 @@
 # Spellcast
 
-Multiplayer word-tracing game. All players share one live 5x5 rune board and race to score by casting valid words before the board changes again.
+Turn-based multiplayer word-tracing game. All players share one evolving 5x5 rune board and take turns casting words across multiple rounds.
 
 ## Game Flow
 
@@ -72,7 +72,9 @@ src/games/spellcast/
 - **Swap**: replaces one chosen tile with one chosen letter and only accepts the result if the board remains valid
 - **Hint**: reveals an unused 4-letter word from the current board if one exists
 - **Gem economy**: each mage starts with 3 gems; `hint` and `swap` cost 2 gems each, and `shuffle` costs 1 gem
-- **Turn timer**: any mage who is not currently taking the turn can trigger a free countdown bar for the active player once per turn
+- **Utility stocks**: each mage also has limited stock for `hint`, `shuffle`, and `swap`; using a utility spends both stock and gems
+- **Gem refresh**: every mage gains +3 gems every 5 rounds
+- **Turn timer**: any mage who is not currently taking the turn can trigger a free countdown bar for the active player once per turn; if it expires, the turn passes
 
 ## Firebase Data (`rooms/{roomCode}`)
 
@@ -83,7 +85,7 @@ players/{uid}/
   uid, username, avatarId, joinedAt, connected, score, wordsFound
 playerOrder: [uid, ...]
 game/
-  state, startedAt, round, totalRounds, turnOrder, currentTurnIndex, turnUtilityUsage, gemBalances, liveSelection
+  state, startedAt, round, totalRounds, turnOrder, currentTurnIndex, turnUtilityUsage, gemBalances, utilityStocks, liveSelection
   turnTimer/
     uid, turnUid, startedAt, endsAt
   boardState/
@@ -93,7 +95,7 @@ game/
   moves/{moveId}/
     uid, word, path, score, boardVersionBefore, boardVersionAfter, createdAt
   lastMove/
-    uid, word|action, score?, path?, refillWord?, tileIndex?, nextLetter?, createdAt
+    uid, word|action, score?, path?, refillWord?, tileIndex?, nextLetter?, turnUid?, amount?, round?, createdAt
 ```
 
 ## Key DB Operations (`db.js`)
@@ -107,17 +109,21 @@ game/
 | `submitWord(roomCode, uid, path, expectedVersion)` | Validate traced word, score it, refill board, record move |
 | `reshuffleBoard(roomCode, uid, expectedVersion)` | Shuffle the current board if an accepted result is found |
 | `swapLetter(roomCode, uid, tileIndex, nextLetter, expectedVersion)` | Replace one tile with one chosen letter if the board stays accepted |
+| `useHint(roomCode, uid)` | Spend hint stock/gems and register hint usage for the turn |
+| `updateLiveSelection(roomCode, uid, path, boardVersion)` | Broadcast the active player's current traced path to other clients |
+| `triggerTurnTimer(roomCode, uid)` | Start the free countdown against the current active player |
+| `expireTurnTimer(roomCode, turnUid, endedAt)` | Authoritatively expire the countdown and pass the turn |
 | `finishMatch(roomCode)` | Force the match to end immediately |
 | `returnToLobby(roomCode)` | Reset room back to `lobby` |
 
 ## Rules
 
-- **Shared board**: everyone plays on the same live board
+- **Shared board**: everyone plays on the same evolving board
 - **Minimum word length**: 3 letters
 - **Turn-based rounds**: a round ends when every connected player has completed one successful cast turn
 - **Adjacency**: orthogonal and diagonal links are both valid
 - **No tile reuse** within one traced word
-- **One-time global word claim**: once a word is cast, it cannot be scored again in that match
+- **Repeat casts allowed**: words can be cast and scored again later in the same match
 - **Board versioning**: submissions, shuffles, and swaps reject stale client state if the board has already changed
 - **Cast ends the turn**: a successful cast passes play to the next connected player
 - **Utility actions stay on turn**: shuffle, swap, and hint do not end your turn
@@ -127,15 +133,27 @@ game/
 - **Rounds**: the host chooses 5-10 rounds, and the same evolving board carries through the full match
 - **Winning**: highest total score after the final round
 - **Player count**: 1-6 players supported
+- **Title/branding**: the entry/lobby UI is presented as `Not Spellcast`
 
 ## UI Features
 
 - **Drag-based selection** with click support and one-step undo by backtracking
-- **Large board actions** under the grid: `Cast`, `Clear Path`, `Hint`, `Shuffle`, `Swap`
+- **Live selection sharing**: non-active players can see the active player's current traced path in blue
+- **Path direction markers**: selected tiles show directional arrows for the traced path
+- **Large board actions** under the grid: `Cast`, `Clear Path`, `Hint`, `Shuffle`, `Swap`, and the spectator `Turn Timer`
 - **Swap overlay** with mobile-friendly A-Z picker
+- **Utility economy UI**: each utility button shows remaining stock plus gem cost
 - **Recent-word feed** showing who cast what
-- **Leaderboard** showing score and found-word counts
-- **Inline status messages** for casts, errors, shuffles, swaps, and hints
+- **Leaderboard** showing score, found-word counts, and gem totals
+- **Top banner messaging** for casts, errors, shuffles, swaps, hints, timer starts, and timer expiries
+- **Turn timer bar** shown in the action-message area when spectators trigger the countdown
+- **Tile feedback**:
+  - local selection uses green outlines
+  - opponent live selection uses blue outlines
+  - successful cast paths blink orange before refill, then settle into a dim orange afterglow
+  - swaps flash orange on the changed tile
+  - shuffles flash the board orange temporarily
+- **Mobile layout** stacks board/actions first, then mages/recent spells, then rune-field metrics
 - **ChatPanel** available in lobby and active game
 
 ## Sound (`utils/spellcastSounds.js`)

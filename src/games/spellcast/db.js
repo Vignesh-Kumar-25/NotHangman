@@ -265,16 +265,6 @@ export async function submitWord(roomCode, uid, path, expectedVersion) {
       return
     }
 
-    if (room.game?.foundWords?.[word]) {
-      rejection = 'That word has already been cast'
-      return
-    }
-
-    if (player.wordsFound?.[word]) {
-      rejection = 'You already found that word'
-      return
-    }
-
     const refill = refillBoard(boardState.rows, path, room.game?.foundWords || {})
     if (!refill) {
       rejection = 'The board could not stabilize after that word'

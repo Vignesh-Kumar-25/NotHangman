@@ -47,6 +47,7 @@ export default function GameScreen({ room, roomCode, uid }) {
   const castTimersRef = useRef([])
   const timerExpiryRequestedRef = useRef(null)
   const prevBoardStateRef = useRef(null)
+  const prevLastMoveCreatedAtRef = useRef(null)
   const prevPathLengthRef = useRef(0)
   const {
     boardState,
@@ -202,6 +203,7 @@ export default function GameScreen({ room, roomCode, uid }) {
       setDisplayRows([])
       setCastPreview({ version: null, path: [], phase: null })
       prevBoardStateRef.current = null
+      prevLastMoveCreatedAtRef.current = null
       return
     }
 
@@ -209,10 +211,15 @@ export default function GameScreen({ room, roomCode, uid }) {
     castTimersRef.current = []
 
     const previousBoardState = prevBoardStateRef.current
+    const previousLastMoveCreatedAt = prevLastMoveCreatedAtRef.current
     const isNewBoardVersion = previousBoardState && previousBoardState.version !== boardState.version
+    const isNewCastMove =
+      game?.lastMove?.action === 'cast' &&
+      game?.lastMove?.createdAt &&
+      game.lastMove.createdAt !== previousLastMoveCreatedAt
     const castPath = game?.lastMove?.action === 'cast' ? game?.lastMove?.path || [] : []
 
-    if (isNewBoardVersion && castPath.length && previousBoardState?.rows) {
+    if (isNewBoardVersion && isNewCastMove && castPath.length && previousBoardState?.rows) {
       setDisplayRows(previousBoardState.rows)
       setCastPreview({ version: boardState.version, path: castPath, phase: 'preview' })
       castTimersRef.current.push(setTimeout(() => {
@@ -221,20 +228,17 @@ export default function GameScreen({ room, roomCode, uid }) {
       }, 700))
     } else {
       setDisplayRows(boardState.rows || [])
-      setCastPreview((current) => (
-        current.version === boardState.version
-          ? current
-          : { version: boardState.version, path: [], phase: null }
-      ))
+      setCastPreview({ version: boardState.version, path: [], phase: null })
     }
 
     prevBoardStateRef.current = boardState
-  }, [boardState, game?.lastMove?.action, game?.lastMove?.path])
+    prevLastMoveCreatedAtRef.current = game?.lastMove?.createdAt || null
+  }, [boardState?.version, game?.lastMove?.createdAt])
 
   useEffect(() => {
     if (!isMyTurn || !boardState) return
     updateLiveSelection(roomCode, uid, path, boardState.version).catch(() => {})
-  }, [boardState, isMyTurn, path, roomCode, uid])
+  }, [boardState?.version, isMyTurn, path, roomCode, uid])
 
   useEffect(() => {
     endSelection()
@@ -532,7 +536,7 @@ export default function GameScreen({ room, roomCode, uid }) {
         </div>
 
         <div className={styles.sideCol}>
-          <ScorePanel leaderboard={leaderboard} currentUid={uid} gemBalances={gemBalances} />
+          <ScorePanel leaderboard={leaderboard} activeUid={currentTurnUid} gemBalances={gemBalances} />
           <WordFeed foundWords={foundWords} players={players} />
         </div>
 

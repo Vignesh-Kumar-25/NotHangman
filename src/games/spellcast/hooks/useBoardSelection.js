@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { areAdjacent, wordFromPath } from '../utils/boardUtils'
 
 export function useBoardSelection(rows) {
@@ -7,6 +7,21 @@ export function useBoardSelection(rows) {
   const draggingRef = useRef(false)
   const activePointerIdRef = useRef(null)
   const suppressClickIndexRef = useRef(null)
+
+  const endSelection = useCallback(function endSelection(pointerId = null) {
+    if (pointerId !== null && activePointerIdRef.current !== null && pointerId !== activePointerIdRef.current) {
+      return
+    }
+    draggingRef.current = false
+    activePointerIdRef.current = null
+    setDragging(false)
+  }, [])
+
+  const clearSelection = useCallback(function clearSelection() {
+    endSelection()
+    suppressClickIndexRef.current = null
+    setPath([])
+  }, [endSelection])
 
   useEffect(() => {
     function handlePointerUp(event) {
@@ -19,7 +34,7 @@ export function useBoardSelection(rows) {
       window.removeEventListener('pointerup', handlePointerUp)
       window.removeEventListener('pointercancel', handlePointerUp)
     }
-  }, [])
+  }, [endSelection])
 
   function appendIndex(index) {
     setPath((current) => {
@@ -96,21 +111,6 @@ export function useBoardSelection(rows) {
 
       return [...current, index]
     })
-  }
-
-  function endSelection(pointerId = null) {
-    if (pointerId !== null && activePointerIdRef.current !== null && pointerId !== activePointerIdRef.current) {
-      return
-    }
-    draggingRef.current = false
-    activePointerIdRef.current = null
-    setDragging(false)
-  }
-
-  function clearSelection() {
-    endSelection()
-    suppressClickIndexRef.current = null
-    setPath([])
   }
 
   return {

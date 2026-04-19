@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
 import CreateRoomForm from '../lobby/CreateRoomForm'
 import JoinRoomForm from '../lobby/JoinRoomForm'
 import styles from './SpellcastEntry.module.css'
 
-export default function SpellcastEntry() {
-  const { uid } = useAuth()
+export default function SpellcastEntry({ uid }) {
   const navigate = useNavigate()
   const [view, setView] = useState('home')
 
