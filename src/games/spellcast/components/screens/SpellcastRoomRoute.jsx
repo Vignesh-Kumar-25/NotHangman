@@ -1,54 +1,33 @@
-import { useEffect, useRef } from 'react'
-import { useParams, Navigate } from 'react-router-dom'
-import { useRoom } from '@/hooks/useRoom'
-import { reconnectPlayer } from '../../db'
-import { GAME_STATES } from '../../constants/gameStates'
-import LobbyScreen from './LobbyScreen'
-import GameScreen from './GameScreen'
-import GameOverScreen from './GameOverScreen'
+import { Navigate, useParams } from 'react-router-dom'
 import LoadingSpinner from '@/components/shared/LoadingSpinner'
-import styles from './SpellcastRoomRoute.module.css'
+import { useRoom } from '@/hooks/useRoom'
+import { GAME_STATES } from '../../constants/gameConfig'
+import GameOverScreen from './GameOverScreen'
+import GameScreen from './GameScreen'
+import LobbyScreen from './LobbyScreen'
 
 export default function SpellcastRoomRoute({ uid }) {
   const { roomCode } = useParams()
   const { room, loading, notFound } = useRoom(roomCode)
-  const reconnectedRef = useRef(false)
-
-  useEffect(() => {
-    if (!room || !uid || reconnectedRef.current) return
-    const player = room.players?.[uid]
-    if (player && player.connected === false && !player.kicked) {
-      reconnectedRef.current = true
-      reconnectPlayer(roomCode, uid).catch(console.error)
-    } else if (player && player.connected) {
-      reconnectedRef.current = true
-    }
-  }, [room, uid, roomCode])
 
   if (loading) {
     return (
-      <div className={styles.center}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
         <LoadingSpinner />
       </div>
     )
   }
 
   if (notFound) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/spellcast" replace />
   }
 
-  if (room?.players?.[uid]?.kicked) {
-    return <Navigate to="/" replace />
-  }
-
-  const gameState = room?.game?.state
   const status = room?.meta?.status
-
-  if (status === 'lobby' || gameState === GAME_STATES.LOBBY) {
+  if (status === GAME_STATES.LOBBY || room?.game?.state === GAME_STATES.LOBBY) {
     return <LobbyScreen room={room} roomCode={roomCode} uid={uid} />
   }
 
-  if (status === 'finished' || gameState === GAME_STATES.GAME_OVER) {
+  if (status === GAME_STATES.FINISHED || room?.game?.state === GAME_STATES.FINISHED) {
     return <GameOverScreen room={room} roomCode={roomCode} uid={uid} />
   }
 

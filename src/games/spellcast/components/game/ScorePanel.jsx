@@ -1,39 +1,24 @@
 import Avatar from '@/components/shared/Avatar'
 import styles from './ScorePanel.module.css'
 
-export default function ScorePanel({ players, playerOrder, currentTurnUid, uid }) {
+export default function ScorePanel({ leaderboard, currentUid }) {
   return (
     <div className={styles.panel}>
-      {playerOrder.map((id) => {
-        const p = players[id]
-        if (!p) return null
-        const isActive = id === currentTurnUid
-        const isMe = id === uid
-        return (
-          <div
-            key={id}
-            className={[
-              styles.player,
-              isActive ? styles.active : '',
-              p.connected === false ? styles.disconnected : '',
-            ].join(' ')}
-          >
-            <div className={styles.avatar}>
-              <Avatar avatarId={p.avatarId} size={28} />
-            </div>
-            <div className={styles.info}>
-              <div className={styles.name}>
-                {p.username}
-                {isMe && <span className={styles.you}> (you)</span>}
-              </div>
-              <div className={styles.stats}>
-                <span className={styles.score}>{p.score ?? 0} pts</span>
-                <span className={styles.gems}>&#9670; {p.gems ?? 0}</span>
-              </div>
-            </div>
+      <h2 className={styles.heading}>Mages</h2>
+      {leaderboard.map((player) => (
+        <div
+          key={player.uid}
+          className={[styles.row, currentUid === player.uid ? styles.active : ''].join(' ')}
+        >
+          <Avatar avatarId={player.avatarId} size={38} />
+          <div className={styles.meta}>
+            <span className={styles.name}>{player.username}</span>
+            <span className={styles.sub}>{player.foundCount} words found</span>
           </div>
-        )
-      })}
+          <span className={styles.score}>{player.score}</span>
+        </div>
+      ))}
     </div>
   )
 }
+

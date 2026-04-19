@@ -19,6 +19,14 @@ const GAMES = [
     path: '/mines',
     available: true,
   },
+  {
+    id: 'spellcast',
+    name: 'Spellcast',
+    description: 'Trace adjacent runes to cast words on a board that keeps rewriting itself.',
+    icon: '\u2728',
+    path: '/spellcast',
+    available: true,
+  },
 ]
 
 export default function HomeScreen() {

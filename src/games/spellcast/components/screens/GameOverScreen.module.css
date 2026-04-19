@@ -12,19 +12,20 @@
 .title {
   font-family: var(--font-display);
   font-size: 3rem;
-  background: linear-gradient(135deg, var(--accent-gold), var(--accent-warning));
+  background: linear-gradient(135deg, #34d399, #fbbf24);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .winnerCard {
+  width: 100%;
   background: var(--bg-surface);
-  border: 2px solid var(--accent-gold);
+  border: 2px solid #fbbf24;
   border-radius: var(--radius-lg);
   padding: 28px 40px;
   text-align: center;
-  box-shadow: 0 0 30px #fbbf2444;
+  box-shadow: 0 0 30px #34d39933;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -40,12 +41,12 @@
 .winnerScore {
   font-family: var(--font-display);
   font-size: 1.2rem;
-  color: var(--accent-gold);
+  color: #34d399;
 }
 
 .crown {
-  background: var(--accent-gold);
-  color: #0f0f1a;
+  background: #fbbf24;
+  color: #081019;
   border-radius: var(--radius-full);
   font-weight: 800;
   font-size: 0.8rem;
@@ -71,7 +72,7 @@
 }
 
 .first {
-  border-color: var(--accent-gold);
+  border-color: #fbbf24;
   background: var(--bg-elevated);
 }
 
@@ -93,13 +94,7 @@
 
 .score {
   font-family: var(--font-display);
-  color: var(--accent-gold);
-}
-
-.gemNote {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  text-align: center;
+  color: #34d399;
 }
 
 .actions {
@@ -112,8 +107,8 @@
 }
 
 .playAgainBtn {
-  background: var(--accent-primary);
-  color: #fff;
+  background: linear-gradient(135deg, #34d399, #fbbf24);
+  color: #081019;
   border: none;
   border-radius: var(--radius-md);
   font-family: var(--font-body);
@@ -122,10 +117,14 @@
   padding: 14px;
   width: 100%;
   cursor: pointer;
-  box-shadow: 0 4px 16px #7c3aed44;
+  box-shadow: 0 4px 16px #34d39933;
   transition: box-shadow 0.15s, transform 0.1s;
 }
-.playAgainBtn:hover { box-shadow: 0 6px 24px #7c3aed77; transform: translateY(-1px); }
+
+.playAgainBtn:hover {
+  box-shadow: 0 6px 24px #34d39955;
+  transform: translateY(-1px);
+}
 
 .leaveBtn {
   background: none;
@@ -136,4 +135,12 @@
   cursor: pointer;
   transition: color 0.15s;
 }
-.leaveBtn:hover { color: var(--accent-danger); }
+
+.leaveBtn:hover {
+  color: var(--accent-danger);
+}
+
+.waitMsg {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
