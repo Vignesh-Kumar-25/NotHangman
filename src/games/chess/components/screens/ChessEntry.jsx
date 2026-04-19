@@ -38,7 +38,7 @@ export default function ChessEntry() {
         <div className={styles.iconWrap}>
           <span className={styles.icon}>&#9819;</span>
         </div>
-        <h1 className={styles.title}>Mini Chess</h1>
+        <h1 className={styles.title}>Not Chess</h1>
         <p className={styles.subtitle}>
           Strategic chess on a compact 5&times;8 board. Outsmart your opponent in tight quarters!
         </p>

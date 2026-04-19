@@ -44,7 +44,7 @@ export async function joinRoom(roomCode, uid, username, avatarId) {
   const snap = await get(roomRef)
   if (!snap.exists()) throw new Error('Room not found')
   const room = snap.val()
-  if (room.meta.gameType !== 'chess') throw new Error('This is not a Mini Chess room')
+  if (room.meta.gameType !== 'chess') throw new Error('This is not a Not Chess room')
   if (room.meta.status !== 'lobby') throw new Error('Game already in progress')
 
   const existingPlayers = room.players || {}
