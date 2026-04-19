@@ -21,7 +21,7 @@ const GAMES = [
   },
   {
     id: 'spellcast',
-    name: 'Spellcast',
+    name: 'Not Spellcast',
     description: 'Trace adjacent runes to cast words on a board that keeps rewriting itself.',
     icon: '\u2728',
     path: '/spellcast',

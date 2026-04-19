@@ -236,6 +236,13 @@ export default function GameScreen({ room, roomCode, uid }) {
     updateLiveSelection(roomCode, uid, path, boardState.version).catch(() => {})
   }, [boardState, isMyTurn, path, roomCode, uid])
 
+  useEffect(() => {
+    endSelection()
+    clearSelection()
+    setInvalidPath([])
+    setSwapOverlayOpen(false)
+  }, [boardState?.version, currentRound, currentTurnUid, clearSelection, endSelection])
+
   function handleBoardPointerDown(index, pointerId) {
     if (!isMyTurn || isBoardAnimating) return
     setHideLastMovePath(true)

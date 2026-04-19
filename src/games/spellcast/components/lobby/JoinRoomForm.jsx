@@ -47,7 +47,7 @@ export default function JoinRoomForm({ uid, onBack, onJoined }) {
   return (
     <div className={styles.card}>
       <button className={styles.backBtn} onClick={onBack} type="button">&larr; Back</button>
-      <h2 className={styles.heading}>Join a Spellcast Room</h2>
+      <h2 className={styles.heading}>Join a Not Spellcast Room</h2>
 
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.field}>
@@ -92,4 +92,3 @@ export default function JoinRoomForm({ uid, onBack, onJoined }) {
     </div>
   )
 }
-

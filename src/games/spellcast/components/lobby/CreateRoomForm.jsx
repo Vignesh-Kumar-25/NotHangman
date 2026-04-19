@@ -39,7 +39,7 @@ export default function CreateRoomForm({ uid, onBack, onCreated }) {
   return (
     <div className={styles.card}>
       <button className={styles.backBtn} onClick={onBack} type="button">&larr; Back</button>
-      <h2 className={styles.heading}>Create a Spellcast Room</h2>
+      <h2 className={styles.heading}>Create a Not Spellcast Room</h2>
 
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.field}>
@@ -70,4 +70,3 @@ export default function CreateRoomForm({ uid, onBack, onCreated }) {
     </div>
   )
 }
-
