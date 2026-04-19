@@ -4,7 +4,17 @@ import ChatPanel from '@/components/chat/ChatPanel'
 import Board from '../game/Board'
 import ScorePanel from '../game/ScorePanel'
 import WordFeed from '../game/WordFeed'
-import { finishMatch, leaveRoom, reshuffleBoard, submitWord, swapLetter, useHint } from '../../db'
+import {
+  expireTurnTimer,
+  finishMatch,
+  leaveRoom,
+  reshuffleBoard,
+  submitWord,
+  swapLetter,
+  triggerTurnTimer,
+  updateLiveSelection,
+  useHint,
+} from '../../db'
 import { useBoardSelection } from '../../hooks/useBoardSelection'
 import { useGameState } from '../../hooks/useGameState'
 import {
@@ -17,6 +27,7 @@ import {
   stopBgMusic,
 } from '../../utils/spellcastSounds'
 import { findHintWord, scoreWord } from '../../utils/boardUtils'
+import { POWER_UP_GEM_COSTS } from '../../constants/gameConfig'
 import styles from './GameScreen.module.css'
 
 export default function GameScreen({ room, roomCode, uid }) {
@@ -29,7 +40,13 @@ export default function GameScreen({ room, roomCode, uid }) {
   const [soundMuted, setSoundMuted] = useState(isMuted())
   const [hintBoardVersion, setHintBoardVersion] = useState(null)
   const [hideLastMovePath, setHideLastMovePath] = useState(false)
+  const [displayRows, setDisplayRows] = useState([])
+  const [castPreview, setCastPreview] = useState({ version: null, path: [], phase: null })
+  const [timerNow, setTimerNow] = useState(() => Date.now())
   const invalidTimerRef = useRef(null)
+  const castTimersRef = useRef([])
+  const timerExpiryRequestedRef = useRef(null)
+  const prevBoardStateRef = useRef(null)
   const prevPathLengthRef = useRef(0)
   const {
     boardState,
@@ -41,9 +58,15 @@ export default function GameScreen({ room, roomCode, uid }) {
     game,
     currentRound,
     totalRounds,
+    currentTurnUid,
     currentPlayer,
     isMyTurn,
     turnUtilityUsage,
+    liveSelection,
+    turnTimer,
+    gemBalances,
+    myGemBalance,
+    myUtilityStock,
   } = useGameState(room, uid)
   const rows = boardState?.rows || []
   const {
@@ -52,12 +75,23 @@ export default function GameScreen({ room, roomCode, uid }) {
     handlePointerDown,
     handlePointerEnter,
     handleTileClick,
+    endSelection,
     clearSelection,
   } = useBoardSelection(rows)
 
   const lastMoveAction = game?.lastMove?.action || 'cast'
+  const isBoardAnimating = castPreview.phase === 'preview'
+  const remoteSelectionPath = useMemo(() => {
+    if (!boardState || !liveSelection || liveSelection.uid === uid) return []
+    if (liveSelection.uid !== currentTurnUid) return []
+    if (liveSelection.boardVersion !== boardState.version) return []
+    return liveSelection.path || []
+  }, [boardState, currentTurnUid, liveSelection, uid])
   const lastMoveTiles = useMemo(() => {
     if (!game?.lastMove || hideLastMovePath) return []
+    if (lastMoveAction === 'cast' && castPreview.path.length) {
+      return castPreview.path
+    }
     if (game.lastMove.action === 'shuffle') {
       return rows.flat().map((_, index) => index)
     }
@@ -65,7 +99,7 @@ export default function GameScreen({ room, roomCode, uid }) {
       return Number.isInteger(game.lastMove.tileIndex) ? [game.lastMove.tileIndex] : []
     }
     return game.lastMove.path || []
-  }, [game?.lastMove, hideLastMovePath, rows])
+  }, [castPreview.path, game?.lastMove, hideLastMovePath, lastMoveAction, rows])
   const metrics = boardState?.metrics
   const selectedScore = scoreWord(currentWord)
   const selectedLength = currentWord.length
@@ -81,6 +115,13 @@ export default function GameScreen({ room, roomCode, uid }) {
     if (game.lastMove.action === 'hint') {
       return `${playerName} used a hint.`
     }
+    if (game.lastMove.action === 'turn_timer') {
+      return ''
+    }
+    if (game.lastMove.action === 'turn_timeout') {
+      const timedPlayerName = players[game.lastMove.turnUid]?.username || 'A mage'
+      return `${timedPlayerName}'s timer expired, turn passed.`
+    }
     return `${playerName} cast ${game.lastMove.word.toUpperCase()} for +${game.lastMove.score}.`
   }, [game?.lastMove, players])
   const turnLabel = currentWord
@@ -91,9 +132,25 @@ export default function GameScreen({ room, roomCode, uid }) {
   const hintUsedThisTurn = Boolean(turnUtilityUsage?.hint)
   const shuffleUsedThisTurn = Boolean(turnUtilityUsage?.shuffle)
   const swapUsedThisTurn = Boolean(turnUtilityUsage?.swap)
+  const hasActiveTurnTimer = Boolean(turnTimer?.turnUid === currentTurnUid)
+  const timerTargetName = turnTimer?.turnUid ? players[turnTimer.turnUid]?.username || 'A mage' : ''
+  const timerTriggerName = turnTimer?.uid ? players[turnTimer.uid]?.username || 'A mage' : ''
+  const timerRemainingMs = hasActiveTurnTimer ? Math.max(0, (turnTimer.endsAt || 0) - timerNow) : 0
+  const showTurnTimer = hasActiveTurnTimer && timerRemainingMs > 0
+  const timerProgress = hasActiveTurnTimer && turnTimer.startedAt && turnTimer.endsAt
+    ? Math.max(0, Math.min(1, timerRemainingMs / Math.max(1, turnTimer.endsAt - turnTimer.startedAt)))
+    : 0
+  const gemCount = myGemBalance || 0
+  const hintCount = myUtilityStock?.hint || 0
+  const shuffleCount = myUtilityStock?.shuffle || 0
+  const swapCount = myUtilityStock?.swap || 0
+
+  useEffect(() => () => clearTimeout(invalidTimerRef.current), [])
 
   useEffect(() => {
-    return () => clearTimeout(invalidTimerRef.current)
+    return () => {
+      castTimersRef.current.forEach(clearTimeout)
+    }
   }, [])
 
   useEffect(() => {
@@ -118,25 +175,90 @@ export default function GameScreen({ room, roomCode, uid }) {
   }, [boardState?.version, hintBoardVersion, status])
 
   useEffect(() => {
+    if (!hasActiveTurnTimer) return undefined
+    const intervalId = window.setInterval(() => setTimerNow(Date.now()), 100)
+    return () => window.clearInterval(intervalId)
+  }, [hasActiveTurnTimer, turnTimer?.endsAt])
+
+  useEffect(() => {
+    if (!hasActiveTurnTimer || timerRemainingMs > 0 || !turnTimer?.turnUid) return
+    const requestKey = `${turnTimer.turnUid}-${turnTimer.endsAt}`
+    if (timerExpiryRequestedRef.current === requestKey) return
+    timerExpiryRequestedRef.current = requestKey
+    expireTurnTimer(roomCode, turnTimer.turnUid, turnTimer.endsAt).catch(() => {})
+  }, [hasActiveTurnTimer, roomCode, timerRemainingMs, turnTimer?.endsAt, turnTimer?.turnUid])
+
+  useEffect(() => {
+    if (hasActiveTurnTimer && timerRemainingMs > 0) return
+    timerExpiryRequestedRef.current = null
+  }, [hasActiveTurnTimer, timerRemainingMs, turnTimer?.turnUid])
+
+  useEffect(() => {
     setHideLastMovePath(false)
   }, [boardState?.version])
 
-  function handleBoardPointerDown(index) {
-    if (!isMyTurn) return
+  useEffect(() => {
+    if (!boardState) {
+      setDisplayRows([])
+      setCastPreview({ version: null, path: [], phase: null })
+      prevBoardStateRef.current = null
+      return
+    }
+
+    castTimersRef.current.forEach(clearTimeout)
+    castTimersRef.current = []
+
+    const previousBoardState = prevBoardStateRef.current
+    const isNewBoardVersion = previousBoardState && previousBoardState.version !== boardState.version
+    const castPath = game?.lastMove?.action === 'cast' ? game?.lastMove?.path || [] : []
+
+    if (isNewBoardVersion && castPath.length && previousBoardState?.rows) {
+      setDisplayRows(previousBoardState.rows)
+      setCastPreview({ version: boardState.version, path: castPath, phase: 'preview' })
+      castTimersRef.current.push(setTimeout(() => {
+        setDisplayRows(boardState.rows || [])
+        setCastPreview({ version: boardState.version, path: castPath, phase: 'afterglow' })
+      }, 700))
+    } else {
+      setDisplayRows(boardState.rows || [])
+      setCastPreview((current) => (
+        current.version === boardState.version
+          ? current
+          : { version: boardState.version, path: [], phase: null }
+      ))
+    }
+
+    prevBoardStateRef.current = boardState
+  }, [boardState, game?.lastMove?.action, game?.lastMove?.path])
+
+  useEffect(() => {
+    if (!isMyTurn || !boardState) return
+    updateLiveSelection(roomCode, uid, path, boardState.version).catch(() => {})
+  }, [boardState, isMyTurn, path, roomCode, uid])
+
+  function handleBoardPointerDown(index, pointerId) {
+    if (!isMyTurn || isBoardAnimating) return
     setHideLastMovePath(true)
-    handlePointerDown(index)
+    handlePointerDown(index, pointerId)
+  }
+
+  function handleBoardPointerEnter(index) {
+    if (!isMyTurn || isBoardAnimating) return
+    setHideLastMovePath(true)
+    handlePointerEnter(index)
   }
 
   function handleBoardTileClick(index) {
-    if (!isMyTurn) return
+    if (!isMyTurn || isBoardAnimating) return
     setHideLastMovePath(true)
     handleTileClick(index)
   }
 
   async function handleSubmit() {
-    if (!isMyTurn) return
+    if (!isMyTurn || isBoardAnimating) return
     if (!boardState || path.length < 3 || submitting) return
     const completedLength = path.length
+    const failedPath = [...path]
     setSubmitting(true)
     setError('')
     setStatus('')
@@ -149,7 +271,8 @@ export default function GameScreen({ room, roomCode, uid }) {
     } catch (err) {
       playInvalidWord()
       setError(err.message || 'Spell failed')
-      setInvalidPath([...path])
+      setInvalidPath(failedPath)
+      clearSelection()
       clearTimeout(invalidTimerRef.current)
       invalidTimerRef.current = setTimeout(() => setInvalidPath([]), 500)
     } finally {
@@ -158,8 +281,8 @@ export default function GameScreen({ room, roomCode, uid }) {
   }
 
   async function handleShuffle() {
-    if (!isMyTurn) return
-    if (!boardState || submitting || shuffleUsedThisTurn) return
+    if (!isMyTurn || isBoardAnimating) return
+    if (!boardState || submitting || shuffleUsedThisTurn || shuffleCount <= 0 || gemCount < POWER_UP_GEM_COSTS.shuffle) return
     setSubmitting(true)
     setError('')
     setStatus('')
@@ -177,8 +300,8 @@ export default function GameScreen({ room, roomCode, uid }) {
   }
 
   async function handleSwap() {
-    if (!isMyTurn) return
-    if (!boardState || submitting || swapUsedThisTurn) return
+    if (!isMyTurn || isBoardAnimating) return
+    if (!boardState || submitting || swapUsedThisTurn || swapCount <= 0 || gemCount < POWER_UP_GEM_COSTS.swap) return
     if (path.length !== 1) {
       setError('Select exactly one tile before using swap')
       setInvalidPath([...path])
@@ -192,8 +315,8 @@ export default function GameScreen({ room, roomCode, uid }) {
   }
 
   async function handleHint() {
-    if (!isMyTurn) return
-    if (!boardState || hintUsedThisTurn) return
+    if (!isMyTurn || isBoardAnimating) return
+    if (!boardState || hintUsedThisTurn || hintCount <= 0 || gemCount < POWER_UP_GEM_COSTS.hint) return
 
     setError('')
     const hintedWord = findHintWord(rows, foundWords, 4)
@@ -209,9 +332,21 @@ export default function GameScreen({ room, roomCode, uid }) {
     setHintBoardVersion(boardState.version)
   }
 
+  async function handleTurnTimer() {
+    if (isMyTurn || !currentTurnUid || hasActiveTurnTimer) return
+    setError('')
+    setStatus('')
+
+    try {
+      await triggerTurnTimer(roomCode, uid)
+    } catch (err) {
+      setError(err.message || 'Timer failed')
+    }
+  }
+
   async function handleSwapLetterPick(nextLetter) {
-    if (!isMyTurn) return
-    if (!boardState || path.length !== 1 || submitting || swapUsedThisTurn) return
+    if (!isMyTurn || isBoardAnimating) return
+    if (!boardState || path.length !== 1 || submitting || swapUsedThisTurn || swapCount <= 0 || gemCount < POWER_UP_GEM_COSTS.swap) return
     setSubmitting(true)
     setError('')
     setSwapOverlayOpen(false)
@@ -283,7 +418,19 @@ export default function GameScreen({ room, roomCode, uid }) {
       </div>
 
       <div className={styles.actionMsgSlot}>
-        {(status || error || lastMoveText) && (
+        {showTurnTimer ? (
+          <div className={styles.turnTimerCard}>
+            <div className={styles.turnTimerText}>
+              {timerTriggerName} started a timer for {timerTargetName}.
+            </div>
+            <div className={styles.turnTimerTrack}>
+              <div
+                className={styles.turnTimerFill}
+                style={{ transform: `scaleX(${timerProgress})` }}
+              />
+            </div>
+          </div>
+        ) : (status || error || lastMoveText) && (
           <div className={`${styles.actionMsg} ${error ? styles.danger : status ? styles.safe : styles.warn}`}>
             {error || status || lastMoveText}
           </div>
@@ -293,27 +440,35 @@ export default function GameScreen({ room, roomCode, uid }) {
       <div className={styles.gameArea}>
         <div className={styles.boardCol}>
           <Board
-            rows={rows}
+            rows={displayRows}
             path={path}
+            remotePath={remoteSelectionPath}
             invalidPath={invalidPath}
             lastMoveTiles={lastMoveTiles}
             lastMoveAction={lastMoveAction}
-            animationCycle={`${boardState?.version || 0}-${lastMoveAction}`}
+            lastMovePhase={castPreview.phase}
+            animationCycle={`${boardState?.version || 0}-${lastMoveAction}-${castPreview.phase || 'idle'}`}
             onTilePointerDown={handleBoardPointerDown}
-            onTilePointerEnter={handlePointerEnter}
+            onTilePointerEnter={handleBoardPointerEnter}
             onTileClick={handleBoardTileClick}
+            onSelectionEnd={endSelection}
           />
 
           <div className={styles.boardActions}>
             <button
               className={styles.submitBtn}
               onClick={handleSubmit}
-              disabled={!isMyTurn || path.length < 3 || submitting}
+              disabled={!isMyTurn || isBoardAnimating || path.length < 3 || submitting}
               type="button"
             >
               {submitting ? 'Casting...' : `Cast for +${selectedScore}`}
             </button>
-            <button className={styles.clearBtn} onClick={clearSelection} disabled={!isMyTurn} type="button">
+            <button
+              className={styles.clearBtn}
+              onClick={clearSelection}
+              disabled={!isMyTurn || isBoardAnimating}
+              type="button"
+            >
               Clear Path
             </button>
           </div>
@@ -322,38 +477,55 @@ export default function GameScreen({ room, roomCode, uid }) {
             <button
               className={styles.utilityBtn}
               onClick={handleHint}
-              disabled={!isMyTurn || !boardState || submitting || hintUsedThisTurn}
+              disabled={!isMyTurn || isBoardAnimating || !boardState || submitting || hintUsedThisTurn || hintCount <= 0 || gemCount < POWER_UP_GEM_COSTS.hint}
               aria-label="Hint"
               title="Hint"
               type="button"
             >
-              💡
+              <span className={styles.utilityBtnIcon}>{'\uD83D\uDCA1'}</span>
+              <span className={styles.utilityBtnBadge}>{hintCount}</span>
+              <span className={styles.utilityBtnCost}>{'\uD83D\uDC8E'} {POWER_UP_GEM_COSTS.hint}</span>
             </button>
             <button
               className={styles.utilityBtn}
               onClick={handleShuffle}
-              disabled={!isMyTurn || !boardState || submitting || shuffleUsedThisTurn}
+              disabled={!isMyTurn || isBoardAnimating || !boardState || submitting || shuffleUsedThisTurn || shuffleCount <= 0 || gemCount < POWER_UP_GEM_COSTS.shuffle}
               aria-label="Shuffle"
               title="Shuffle"
               type="button"
             >
-              🔀
+              <span className={styles.utilityBtnIcon}>{'\uD83D\uDD00'}</span>
+              <span className={styles.utilityBtnBadge}>{shuffleCount}</span>
+              <span className={styles.utilityBtnCost}>{'\uD83D\uDC8E'} {POWER_UP_GEM_COSTS.shuffle}</span>
             </button>
             <button
               className={styles.utilityBtn}
               onClick={handleSwap}
-              disabled={!isMyTurn || !boardState || submitting || swapUsedThisTurn}
+              disabled={!isMyTurn || isBoardAnimating || !boardState || submitting || swapUsedThisTurn || swapCount <= 0 || gemCount < POWER_UP_GEM_COSTS.swap}
               aria-label="Swap"
               title="Swap"
               type="button"
             >
-              🔄
+              <span className={styles.utilityBtnIcon}>{'\uD83D\uDD04'}</span>
+              <span className={styles.utilityBtnBadge}>{swapCount}</span>
+              <span className={styles.utilityBtnCost}>{'\uD83D\uDC8E'} {POWER_UP_GEM_COSTS.swap}</span>
+            </button>
+            <button
+              className={styles.utilityBtn}
+              onClick={handleTurnTimer}
+              disabled={isMyTurn || !currentTurnUid || hasActiveTurnTimer}
+              aria-label="Turn Timer"
+              title="Turn Timer"
+              type="button"
+            >
+              <span className={styles.utilityBtnIcon}>{'\u23F3'}</span>
+              <span className={styles.utilityBtnTimerLabel}>Free</span>
             </button>
           </div>
         </div>
 
         <div className={styles.sideCol}>
-          <ScorePanel leaderboard={leaderboard} currentUid={uid} />
+          <ScorePanel leaderboard={leaderboard} currentUid={uid} gemBalances={gemBalances} />
           <WordFeed foundWords={foundWords} players={players} />
         </div>
 
@@ -389,7 +561,7 @@ export default function GameScreen({ room, roomCode, uid }) {
                 <div className={styles.swapTitle}>Choose a replacement letter</div>
               </div>
               <button className={styles.swapClose} onClick={() => setSwapOverlayOpen(false)} type="button">
-                ×
+                {'\u00D7'}
               </button>
             </div>
 

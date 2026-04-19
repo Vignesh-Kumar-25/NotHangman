@@ -36,10 +36,28 @@
   min-width: 0;
 }
 
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
 .name {
   font-weight: 800;
   color: var(--text-primary);
   font-size: 0.92rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gems {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #93c5fd;
 }
 
 .sub {

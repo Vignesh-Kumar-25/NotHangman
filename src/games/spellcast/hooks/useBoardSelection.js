@@ -5,16 +5,20 @@ export function useBoardSelection(rows) {
   const [path, setPath] = useState([])
   const [dragging, setDragging] = useState(false)
   const draggingRef = useRef(false)
+  const activePointerIdRef = useRef(null)
   const suppressClickIndexRef = useRef(null)
 
   useEffect(() => {
-    function handlePointerUp() {
-      draggingRef.current = false
-      setDragging(false)
+    function handlePointerUp(event) {
+      endSelection(event.pointerId)
     }
 
     window.addEventListener('pointerup', handlePointerUp)
-    return () => window.removeEventListener('pointerup', handlePointerUp)
+    window.addEventListener('pointercancel', handlePointerUp)
+    return () => {
+      window.removeEventListener('pointerup', handlePointerUp)
+      window.removeEventListener('pointercancel', handlePointerUp)
+    }
   }, [])
 
   function appendIndex(index) {
@@ -35,13 +39,15 @@ export function useBoardSelection(rows) {
     })
   }
 
-  function handlePointerDown(index) {
+  function handlePointerDown(index, pointerId = null) {
     draggingRef.current = true
+    activePointerIdRef.current = pointerId
     setDragging(true)
     suppressClickIndexRef.current = index
     setPath((current) => {
       if (current.length === 1 && current[0] === index) {
         draggingRef.current = false
+        activePointerIdRef.current = null
         setDragging(false)
         return []
       }
@@ -92,10 +98,18 @@ export function useBoardSelection(rows) {
     })
   }
 
-  function clearSelection() {
+  function endSelection(pointerId = null) {
+    if (pointerId !== null && activePointerIdRef.current !== null && pointerId !== activePointerIdRef.current) {
+      return
+    }
     draggingRef.current = false
-    suppressClickIndexRef.current = null
+    activePointerIdRef.current = null
     setDragging(false)
+  }
+
+  function clearSelection() {
+    endSelection()
+    suppressClickIndexRef.current = null
     setPath([])
   }
 
@@ -106,6 +120,7 @@ export function useBoardSelection(rows) {
     handlePointerDown,
     handlePointerEnter,
     handleTileClick,
+    endSelection,
     clearSelection,
   }
 }

@@ -71,6 +71,8 @@ src/games/spellcast/
 - **Shuffle**: permutes existing letters and only accepts the result if the board still passes quality checks
 - **Swap**: replaces one chosen tile with one chosen letter and only accepts the result if the board remains valid
 - **Hint**: reveals an unused 4-letter word from the current board if one exists
+- **Gem economy**: each mage starts with 3 gems; `hint` and `swap` cost 2 gems each, and `shuffle` costs 1 gem
+- **Turn timer**: any mage who is not currently taking the turn can trigger a free countdown bar for the active player once per turn
 
 ## Firebase Data (`rooms/{roomCode}`)
 
@@ -81,7 +83,9 @@ players/{uid}/
   uid, username, avatarId, joinedAt, connected, score, wordsFound
 playerOrder: [uid, ...]
 game/
-  state, startedAt, round, totalRounds, turnOrder, currentTurnIndex, turnUtilityUsage
+  state, startedAt, round, totalRounds, turnOrder, currentTurnIndex, turnUtilityUsage, gemBalances, liveSelection
+  turnTimer/
+    uid, turnUid, startedAt, endsAt
   boardState/
     version, rows, metrics, updatedAt
   foundWords/{word}/
@@ -117,7 +121,9 @@ game/
 - **Board versioning**: submissions, shuffles, and swaps reject stale client state if the board has already changed
 - **Cast ends the turn**: a successful cast passes play to the next connected player
 - **Utility actions stay on turn**: shuffle, swap, and hint do not end your turn
-- **Utility limits**: hint, shuffle, and swap can each be used at most once per turn
+- **Utility limits**: hint, shuffle, and swap can each be used at most once per turn and only while you still have enough gems and remaining stock
+- **Gem refresh**: gems do not reset every round; instead, every mage gains +3 gems every 5 rounds
+- **Timer pressure**: the non-active players can trigger one free timer per turn; it is unavailable to the active player
 - **Rounds**: the host chooses 5-10 rounds, and the same evolving board carries through the full match
 - **Winning**: highest total score after the final round
 - **Player count**: 1-6 players supported

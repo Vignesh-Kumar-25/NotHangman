@@ -33,6 +33,12 @@ export function useGameState(room, uid) {
   const currentPlayer = currentTurnUid ? players[currentTurnUid] : null
   const isMyTurn = currentTurnUid === uid
   const turnUtilityUsage = game.turnUtilityUsage || {}
+  const liveSelection = game.liveSelection || null
+  const turnTimer = game.turnTimer || null
+  const gemBalances = game.gemBalances || {}
+  const utilityStocks = game.utilityStocks || {}
+  const myGemBalance = gemBalances[uid] || 0
+  const myUtilityStock = utilityStocks[uid] || { hint: 0, shuffle: 0, swap: 0 }
 
   return {
     players,
@@ -53,5 +59,11 @@ export function useGameState(room, uid) {
     currentPlayer,
     isMyTurn,
     turnUtilityUsage,
+    liveSelection,
+    turnTimer,
+    gemBalances,
+    utilityStocks,
+    myGemBalance,
+    myUtilityStock,
   }
 }

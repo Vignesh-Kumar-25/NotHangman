@@ -9,7 +9,16 @@ import {
 } from 'firebase/database'
 import { db } from '@/firebase/config'
 import { generateRoomCode } from '@/utils/roomCode'
-import { GAME_STATES, MAX_PLAYERS, DEFAULT_NUM_ROUNDS } from './constants/gameConfig'
+import {
+  GAME_STATES,
+  MAX_PLAYERS,
+  DEFAULT_NUM_ROUNDS,
+  GEM_REFRESH_INTERVAL,
+  DEFAULT_GEM_COUNT,
+  DEFAULT_POWER_UP_COUNTS,
+  TURN_TIMER_DURATION_MS,
+  POWER_UP_GEM_COSTS,
+} from './constants/gameConfig'
 import {
   createAcceptedBoard,
   evaluateBoard,
@@ -193,6 +202,10 @@ export async function startGame(roomCode) {
       turnOrder: getConnectedPlayerOrder(room),
       currentTurnIndex: 0,
       turnUtilityUsage: {},
+      gemBalances: buildGemBalances(players),
+      utilityStocks: buildUtilityStocks(players),
+      liveSelection: null,
+      turnTimer: null,
       boardState: {
         version: 1,
         rows,
@@ -298,12 +311,14 @@ export async function submitWord(roomCode, uid, path, expectedVersion) {
 
     room.game.lastMove = {
       uid,
+      action: 'cast',
       word,
       score: points,
       path,
       refillWord: refill.refillWord,
       createdAt: now,
     }
+    room.game.liveSelection = null
 
     room.game.boardState = {
       version: nextVersion,
@@ -378,6 +393,14 @@ export async function reshuffleBoard(roomCode, uid, expectedVersion) {
       rejection = 'You already used shuffle this turn'
       return
     }
+    if (getUtilityStock(room, uid, 'shuffle') <= 0) {
+      rejection = 'You are out of shuffles'
+      return
+    }
+    if (getGemBalance(room, uid) < POWER_UP_GEM_COSTS.shuffle) {
+      rejection = 'You need more gems to shuffle'
+      return
+    }
 
     const boardState = room.game?.boardState
     if (!boardState || boardState.version !== expectedVersion) {
@@ -397,7 +420,10 @@ export async function reshuffleBoard(roomCode, uid, expectedVersion) {
       action: 'shuffle',
       createdAt: now,
     }
+    room.game.liveSelection = null
     markTurnUtilityUsed(room, 'shuffle')
+    spendUtility(room, uid, 'shuffle')
+    spendGems(room, uid, POWER_UP_GEM_COSTS.shuffle)
     room.game.boardState = {
       version: boardState.version + 1,
       rows: shuffled.rows,
@@ -443,6 +469,14 @@ export async function swapLetter(roomCode, uid, tileIndex, nextLetter, expectedV
       rejection = 'You already used swap this turn'
       return
     }
+    if (getUtilityStock(room, uid, 'swap') <= 0) {
+      rejection = 'You are out of swaps'
+      return
+    }
+    if (getGemBalance(room, uid) < POWER_UP_GEM_COSTS.swap) {
+      rejection = 'You need more gems to swap'
+      return
+    }
 
     const boardState = room.game?.boardState
     if (!boardState || boardState.version !== expectedVersion) {
@@ -464,7 +498,10 @@ export async function swapLetter(roomCode, uid, tileIndex, nextLetter, expectedV
       nextLetter,
       createdAt: now,
     }
+    room.game.liveSelection = null
     markTurnUtilityUsed(room, 'swap')
+    spendUtility(room, uid, 'swap')
+    spendGems(room, uid, POWER_UP_GEM_COSTS.swap)
     room.game.boardState = {
       version: boardState.version + 1,
       rows: swapped.rows,
@@ -510,6 +547,14 @@ export async function useHint(roomCode, uid) {
       rejection = 'You already used hint this turn'
       return
     }
+    if (getUtilityStock(room, uid, 'hint') <= 0) {
+      rejection = 'You are out of hints'
+      return
+    }
+    if (getGemBalance(room, uid) < POWER_UP_GEM_COSTS.hint) {
+      rejection = 'You need more gems to use a hint'
+      return
+    }
 
     room.game.lastMove = {
       uid,
@@ -517,6 +562,8 @@ export async function useHint(roomCode, uid) {
       createdAt: Date.now(),
     }
     markTurnUtilityUsed(room, 'hint')
+    spendUtility(room, uid, 'hint')
+    spendGems(room, uid, POWER_UP_GEM_COSTS.hint)
 
     return room
   })
@@ -539,6 +586,154 @@ export async function setRoomNumRounds(roomCode, numRounds) {
   await update(ref(db, `rooms/${roomCode}/meta`), { numRounds })
 }
 
+export async function updateLiveSelection(roomCode, uid, path, boardVersion) {
+  const roomRef = ref(db, `rooms/${roomCode}`)
+  let rejection = 'Selection could not be updated'
+
+  const result = await runTransaction(roomRef, (room) => {
+    if (!room) {
+      rejection = 'Room not found'
+      return
+    }
+
+    if (room.meta?.gameType !== 'spellcast' || room.game?.state !== GAME_STATES.PLAYING) {
+      rejection = 'Spellcast match is not active'
+      return
+    }
+
+    const turnState = getTurnState(room)
+    if (turnState.currentTurnUid !== uid) {
+      rejection = 'It is not your turn'
+      return
+    }
+
+    if (room.game?.boardState?.version !== boardVersion) {
+      rejection = 'Board changed. Try again on the latest board.'
+      return
+    }
+
+    room.game.liveSelection = path.length
+      ? {
+          uid,
+          path,
+          boardVersion,
+          updatedAt: Date.now(),
+        }
+      : null
+
+    return room
+  })
+
+  if (!result.committed && rejection !== 'It is not your turn' && rejection !== 'Board changed. Try again on the latest board.') {
+    throw new Error(rejection)
+  }
+}
+
+export async function triggerTurnTimer(roomCode, uid) {
+  const roomRef = ref(db, `rooms/${roomCode}`)
+  let rejection = 'Timer could not be started'
+
+  const result = await runTransaction(roomRef, (room) => {
+    if (!room) {
+      rejection = 'Room not found'
+      return
+    }
+
+    if (room.meta?.gameType !== 'spellcast' || room.game?.state !== GAME_STATES.PLAYING) {
+      rejection = 'Spellcast match is not active'
+      return
+    }
+
+    const player = room.players?.[uid]
+    if (!player || player.connected === false) {
+      rejection = 'You are not active in this room'
+      return
+    }
+
+    const turnState = getTurnState(room)
+    if (!turnState.currentTurnUid) {
+      rejection = 'No active turn'
+      return
+    }
+    if (turnState.currentTurnUid === uid) {
+      rejection = 'You cannot time your own turn'
+      return
+    }
+    if (room.game?.turnTimer?.turnUid === turnState.currentTurnUid) {
+      rejection = 'Timer already started for this turn'
+      return
+    }
+
+    const now = Date.now()
+    room.game.turnTimer = {
+      uid,
+      turnUid: turnState.currentTurnUid,
+      startedAt: now,
+      endsAt: now + TURN_TIMER_DURATION_MS,
+    }
+    room.game.lastMove = {
+      uid,
+      action: 'turn_timer',
+      turnUid: turnState.currentTurnUid,
+      createdAt: now,
+    }
+
+    return room
+  })
+
+  if (!result.committed) {
+    throw new Error(rejection)
+  }
+}
+
+export async function expireTurnTimer(roomCode, turnUid, endedAt) {
+  const roomRef = ref(db, `rooms/${roomCode}`)
+  let rejection = 'Timer could not expire'
+
+  const result = await runTransaction(roomRef, (room) => {
+    if (!room) {
+      rejection = 'Room not found'
+      return
+    }
+
+    if (room.meta?.gameType !== 'spellcast' || room.game?.state !== GAME_STATES.PLAYING) {
+      rejection = 'Spellcast match is not active'
+      return
+    }
+
+    const timer = room.game?.turnTimer
+    if (!timer || timer.turnUid !== turnUid) {
+      rejection = 'Timer no longer applies'
+      return
+    }
+
+    const turnState = getTurnState(room)
+    if (turnState.currentTurnUid !== turnUid) {
+      room.game.turnTimer = null
+      return room
+    }
+
+    if ((timer.endsAt || 0) > endedAt) {
+      rejection = 'Timer is still running'
+      return
+    }
+
+    room.game.lastMove = {
+      uid: timer.uid,
+      action: 'turn_timeout',
+      turnUid,
+      createdAt: endedAt,
+    }
+    advanceTurn(room)
+
+    return room
+  })
+
+  if (!result.committed && rejection !== 'Timer no longer applies' && rejection !== 'Timer is still running') {
+    throw new Error(rejection)
+  }
+}
+
 function summarizeMetrics(metrics) {
   return {
     accepted: metrics.accepted,
@@ -552,6 +747,20 @@ function summarizeMetrics(metrics) {
     failureTags: metrics.failureTags,
     countsByLength: metrics.countsByLength,
   }
+}
+
+function buildGemBalances(players) {
+  return Object.keys(players || {}).reduce((balances, playerId) => {
+    balances[playerId] = DEFAULT_GEM_COUNT
+    return balances
+  }, {})
+}
+
+function buildUtilityStocks(players) {
+  return Object.keys(players || {}).reduce((stocks, playerId) => {
+    stocks[playerId] = { ...DEFAULT_POWER_UP_COUNTS }
+    return stocks
+  }, {})
 }
 
 function normalizePlayerOrder(playerOrder) {
@@ -582,6 +791,8 @@ function syncTurnState(room) {
     room.game.turnOrder = []
     room.game.currentTurnIndex = 0
     room.game.turnUtilityUsage = {}
+    room.game.liveSelection = null
+    room.game.turnTimer = null
     return
   }
 
@@ -589,6 +800,8 @@ function syncTurnState(room) {
   room.game.currentTurnIndex = Math.min(currentTurnIndex, activeTurnOrder.length - 1)
   if (previousTurnUid !== activeTurnOrder[room.game.currentTurnIndex]) {
     room.game.turnUtilityUsage = {}
+    room.game.liveSelection = null
+    room.game.turnTimer = null
   }
 }
 
@@ -601,6 +814,8 @@ function advanceTurn(room) {
     room.game.turnOrder = []
     room.game.currentTurnIndex = 0
     room.game.turnUtilityUsage = {}
+    room.game.liveSelection = null
+    room.game.turnTimer = null
     return
   }
 
@@ -608,28 +823,46 @@ function advanceTurn(room) {
     room.game.turnOrder = activeTurnOrder
     room.game.currentTurnIndex = currentTurnIndex + 1
     room.game.turnUtilityUsage = {}
+    room.game.liveSelection = null
+    room.game.turnTimer = null
     return
   }
 
+  if (activeTurnOrder.length === 1) {
+    advanceRound(room, activeTurnOrder)
+    return
+  }
+
+  advanceRound(room, getConnectedPlayerOrder(room))
+}
+
+function advanceRound(room, nextTurnOrder) {
   const currentRound = room.game?.round || 1
   const totalRounds = room.game?.totalRounds || DEFAULT_NUM_ROUNDS
 
   if (currentRound >= totalRounds) {
     room.meta.status = GAME_STATES.FINISHED
     room.game.state = GAME_STATES.FINISHED
-    room.game.turnOrder = activeTurnOrder
-    room.game.currentTurnIndex = activeTurnOrder.length - 1
+    room.game.turnOrder = nextTurnOrder
+    room.game.currentTurnIndex = Math.max(nextTurnOrder.length - 1, 0)
     room.game.turnUtilityUsage = {}
+    room.game.liveSelection = null
+    room.game.turnTimer = null
     return
   }
 
-  const nextTurnOrder = getConnectedPlayerOrder(room)
+  const nextRound = currentRound + 1
 
-  room.game.round = currentRound + 1
+  room.game.round = nextRound
   room.game.totalRounds = totalRounds
   room.game.turnOrder = nextTurnOrder
   room.game.currentTurnIndex = 0
   room.game.turnUtilityUsage = {}
+  room.game.liveSelection = null
+  room.game.turnTimer = null
+  if (shouldRefreshGems(nextRound)) {
+    grantRoundGems(room, nextTurnOrder, nextRound)
+  }
 }
 
 function hasUsedTurnUtility(room, utilityName) {
@@ -641,4 +874,50 @@ function markTurnUtilityUsed(room, utilityName) {
     room.game.turnUtilityUsage = {}
   }
   room.game.turnUtilityUsage[utilityName] = true
+}
+
+function getGemBalance(room, uid) {
+  return room.game?.gemBalances?.[uid] || 0
+}
+
+function getUtilityStock(room, uid, utilityName) {
+  return room.game?.utilityStocks?.[uid]?.[utilityName] || 0
+}
+
+function spendUtility(room, uid, utilityName) {
+  if (!room.game.utilityStocks) {
+    room.game.utilityStocks = {}
+  }
+  if (!room.game.utilityStocks[uid]) {
+    room.game.utilityStocks[uid] = { ...DEFAULT_POWER_UP_COUNTS }
+  }
+  room.game.utilityStocks[uid][utilityName] = Math.max(0, (room.game.utilityStocks[uid][utilityName] || 0) - 1)
+}
+
+function spendGems(room, uid, amount) {
+  if (!room.game.gemBalances) {
+    room.game.gemBalances = {}
+  }
+  room.game.gemBalances[uid] = Math.max(0, (room.game.gemBalances[uid] || 0) - amount)
+}
+
+function shouldRefreshGems(roundNumber) {
+  return roundNumber > 1 && (roundNumber - 1) % GEM_REFRESH_INTERVAL === 0
+}
+
+function grantRoundGems(room, playerOrder, roundNumber) {
+  if (!room.game.gemBalances) {
+    room.game.gemBalances = buildGemBalances(room.players || {})
+  }
+
+  playerOrder.forEach((playerId) => {
+    room.game.gemBalances[playerId] = (room.game.gemBalances[playerId] || 0) + DEFAULT_GEM_COUNT
+  })
+
+  room.game.lastMove = {
+    action: 'gem_refill',
+    round: roundNumber,
+    amount: DEFAULT_GEM_COUNT,
+    createdAt: Date.now(),
+  }
 }
