@@ -4,6 +4,7 @@ export function useGameState(room, uid) {
   if (!room) return {}
 
   const players = room.players || {}
+  const normalizeOrder = (order) => (Array.isArray(order) ? order : Object.values(order || {}))
   const playerOrder = Array.isArray(room.playerOrder)
     ? room.playerOrder
     : Object.values(room.playerOrder || {})
@@ -12,7 +13,8 @@ export function useGameState(room, uid) {
   const me = players[uid]
   const isHost = meta.hostUid === uid
   const connectedPlayers = playerOrder.filter((playerId) => players[playerId]?.connected !== false)
-  const turnOrder = Array.isArray(game.turnOrder) ? game.turnOrder : connectedPlayers
+  const normalizedTurnOrder = normalizeOrder(game.turnOrder)
+  const turnOrder = normalizedTurnOrder.length ? normalizedTurnOrder : connectedPlayers
   const boardState = game.boardState || null
   const foundWords = Object.entries(game.foundWords || {})
     .map(([word, data]) => ({ word, ...data }))

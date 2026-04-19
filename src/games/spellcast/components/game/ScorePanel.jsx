@@ -1,14 +1,14 @@
 import Avatar from '@/components/shared/Avatar'
 import styles from './ScorePanel.module.css'
 
-export default function ScorePanel({ leaderboard, currentUid, gemBalances }) {
+export default function ScorePanel({ leaderboard, activeUid, gemBalances }) {
   return (
     <div className={styles.panel}>
       <h2 className={styles.heading}>Mages</h2>
       {leaderboard.map((player) => (
         <div
           key={player.uid}
-          className={[styles.row, currentUid === player.uid ? styles.active : ''].join(' ')}
+          className={[styles.row, activeUid === player.uid ? styles.active : ''].join(' ')}
         >
           <Avatar avatarId={player.avatarId} size={38} />
           <div className={styles.meta}>

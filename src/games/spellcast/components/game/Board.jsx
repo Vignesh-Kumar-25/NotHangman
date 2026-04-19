@@ -79,6 +79,7 @@ export default function Board({
         return
       }
       activePointerIdRef.current = null
+      onSelectionEnd(event.pointerId)
     }
 
     window.addEventListener('pointermove', handleWindowPointerMove)
@@ -89,7 +90,7 @@ export default function Board({
       window.removeEventListener('pointerup', handleWindowPointerEnd)
       window.removeEventListener('pointercancel', handleWindowPointerEnd)
     }
-  }, [])
+  }, [onSelectionEnd])
 
   useEffect(() => {
     function handleWindowTouchMove(event) {
