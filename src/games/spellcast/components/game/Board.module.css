@@ -1,0 +1,212 @@
+.board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  width: min(100%, 520px);
+  margin: 0 auto;
+  touch-action: none;
+  padding: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.tile {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 14px;
+  border: 2px solid #244560;
+  background: linear-gradient(180deg, #143044, #0d2233);
+  color: #f8fafc;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  letter-spacing: 0.05em;
+  box-shadow: inset 0 1px 0 #ffffff10, 0 6px 18px #0000002a;
+  transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s;
+}
+
+.letter {
+  position: relative;
+  z-index: 1;
+}
+
+.pathArrow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  font-size: clamp(1rem, 3vw, 1.18rem);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 0 8px currentColor, 0 1px 6px #00000075;
+  transform-origin: 50% 55%;
+  pointer-events: none;
+}
+
+.pathArrowLocal {
+  color: #86efac;
+}
+
+.pathArrowRemote {
+  color: #93c5fd;
+}
+
+.arrowUp {
+  top: 14%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(0deg);
+}
+
+.arrowUpRight {
+  top: 18%;
+  left: 82%;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.arrowRight {
+  top: 50%;
+  left: 86%;
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.arrowDownRight {
+  top: 82%;
+  left: 82%;
+  transform: translate(-50%, -50%) rotate(135deg);
+}
+
+.arrowDown {
+  top: 86%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(180deg);
+}
+
+.arrowDownLeft {
+  top: 82%;
+  left: 18%;
+  transform: translate(-50%, -50%) rotate(225deg);
+}
+
+.arrowLeft {
+  top: 50%;
+  left: 14%;
+  transform: translate(-50%, -50%) rotate(270deg);
+}
+
+.arrowUpLeft {
+  top: 18%;
+  left: 18%;
+  transform: translate(-50%, -50%) rotate(315deg);
+}
+
+.tile:hover {
+  transform: translateY(-1px);
+}
+
+.selected {
+  border-color: #34d399;
+  box-shadow: 0 0 0 2px #34d39944, 0 10px 24px #34d39922;
+}
+
+.remoteSelected {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px #60a5fa44, 0 10px 24px #60a5fa22;
+}
+
+.lastMove {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 1px #f59e0b28, 0 6px 14px #f59e0b14;
+}
+
+.lastMoveFlash {
+  animation: lastMoveBlink 0.55s ease-out 1;
+}
+
+.castPreviewFlash {
+  animation: castPreviewBlink 0.42s ease-out 2;
+}
+
+.shuffleFlash {
+  animation: shuffleBlink 0.45s ease-out 2;
+}
+
+.swapMove {
+  background: linear-gradient(180deg, #2f4556, #17303d);
+}
+
+.anchor {
+  background: linear-gradient(180deg, #225247, #12332e);
+}
+
+.invalid {
+  animation: invalidBlink 0.45s ease-out 1;
+}
+
+@keyframes invalidBlink {
+  0% {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 2px #ef444455, 0 10px 24px #ef444422;
+  }
+  50% {
+    border-color: #fca5a5;
+    box-shadow: 0 0 0 3px #ef444477, 0 12px 28px #ef444433;
+  }
+  100% {
+    border-color: #244560;
+    box-shadow: inset 0 1px 0 #ffffff10, 0 6px 18px #0000002a;
+  }
+}
+
+@keyframes lastMoveBlink {
+  0% {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 0 #fbbf2400, 0 0 0 #fbbf2400;
+    filter: brightness(1);
+  }
+  35% {
+    border-color: #fde68a;
+    box-shadow: 0 0 0 3px #fbbf2430, 0 8px 18px #f59e0b22;
+    filter: brightness(1.08);
+  }
+  100% {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 1px #f59e0b28, 0 6px 14px #f59e0b14;
+    filter: brightness(1);
+  }
+}
+
+@keyframes castPreviewBlink {
+  0% {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 1px #f59e0b28, 0 6px 14px #f59e0b14;
+    filter: brightness(1);
+  }
+  40% {
+    border-color: #fde68a;
+    box-shadow: 0 0 0 4px #fbbf2464, 0 12px 28px #f59e0b3a;
+    filter: brightness(1.18);
+  }
+  100% {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 1px #f59e0b28, 0 6px 14px #f59e0b14;
+    filter: brightness(1);
+  }
+}
+
+@keyframes shuffleBlink {
+  0% {
+    border-color: #244560;
+    box-shadow: inset 0 1px 0 #ffffff10, 0 6px 18px #0000002a;
+    filter: brightness(1);
+  }
+  35% {
+    border-color: #fde68a;
+    box-shadow: 0 0 0 4px #fbbf2460, 0 12px 30px #f59e0b35;
+    filter: brightness(1.18);
+  }
+  100% {
+    border-color: #244560;
+    box-shadow: inset 0 1px 0 #ffffff10, 0 6px 18px #0000002a;
+    filter: brightness(1);
+  }
+}

@@ -1,9 +1,0 @@
-.badge {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  padding: 4px 14px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-}

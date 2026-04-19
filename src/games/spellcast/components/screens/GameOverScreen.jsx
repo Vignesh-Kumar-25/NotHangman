@@ -1,15 +1,16 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { resetGame } from '../../db'
-import { useGameState } from '../../hooks/useGameState'
-import { playGameOver, stopBgMusic } from '@/utils/soundManager'
 import Avatar from '@/components/shared/Avatar'
+import ChatPanel from '@/components/chat/ChatPanel'
+import { playGameOver, stopBgMusic } from '@/utils/soundManager'
+import { leaveRoom, returnToLobby } from '../../db'
+import { useGameState } from '../../hooks/useGameState'
 import styles from './GameOverScreen.module.css'
 
 export default function GameOverScreen({ room, roomCode, uid }) {
   const navigate = useNavigate()
-  const { players, playerOrder, isHost, meta } = useGameState(room, uid)
   const soundPlayedRef = useRef(false)
+  const { players, playerOrder, isHost, me } = useGameState(room, uid)
 
   useEffect(() => {
     if (!soundPlayedRef.current) {
@@ -22,39 +23,42 @@ export default function GameOverScreen({ room, roomCode, uid }) {
   const sorted = [...playerOrder]
     .filter((id) => players[id])
     .sort((a, b) => (players[b].score ?? 0) - (players[a].score ?? 0))
+  const winnerId = sorted[0]
+  const winner = winnerId ? players[winnerId] : null
 
-  const winner = sorted[0]
+  const medals = ['🥇', '🥈', '🥉']
 
-  async function handlePlayAgain() {
-    await resetGame(roomCode, playerOrder, players)
+  async function handleLeave() {
+    await leaveRoom(roomCode, uid)
+    navigate('/spellcast')
   }
 
-  function handleLeave() {
-    navigate('/')
+  async function handleReturnToLobby() {
+    await returnToLobby(roomCode)
   }
-
-  const medals = ['\uD83E\uDD47', '\uD83E\uDD48', '\uD83E\uDD49']
 
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>Game Over!</h1>
 
-      {winner && players[winner] && (
+      {winner && (
         <div className={styles.winnerCard}>
-          <Avatar avatarId={players[winner].avatarId} size={72} />
-          <p className={styles.winnerName}>{players[winner].username}</p>
-          <p className={styles.winnerScore}>{players[winner].score} pts</p>
-          <span className={styles.crown}>{'\uD83D\uDC51'} Winner</span>
+          <Avatar avatarId={winner.avatarId} size={72} />
+          <p className={styles.winnerName}>{winner.username}</p>
+          <p className={styles.winnerScore}>{winner.score ?? 0} pts</p>
+          <span className={styles.crown}>👑 Winner</span>
         </div>
       )}
 
       <div className={styles.leaderboard}>
-        {sorted.map((id, i) => {
-          const player = players[id]
-          const isMe = id === uid
+        {sorted.map((playerId, index) => {
+          const player = players[playerId]
+          if (!player) return null
+          const isMe = playerId === uid
+
           return (
-            <div key={id} className={[styles.row, i === 0 ? styles.first : ''].join(' ')}>
-              <span className={styles.rank}>{medals[i] ?? `${i + 1}.`}</span>
+            <div key={playerId} className={[styles.row, index === 0 ? styles.first : ''].join(' ')}>
+              <span className={styles.rank}>{medals[index] ?? `${index + 1}.`}</span>
               <Avatar avatarId={player.avatarId} size={32} />
               <span className={styles.name}>
                 {player.username}
@@ -66,18 +70,19 @@ export default function GameOverScreen({ room, roomCode, uid }) {
         })}
       </div>
 
-      <p className={styles.gemNote}>Leftover gems were converted to points (1 gem = 1 pt)</p>
-
       <div className={styles.actions}>
         {isHost && (
-          <button className={styles.playAgainBtn} onClick={handlePlayAgain}>
-            Play Again
+          <button className={styles.playAgainBtn} onClick={handleReturnToLobby} type="button">
+            Return To Lobby
           </button>
         )}
-        <button className={styles.leaveBtn} onClick={handleLeave}>
+        {!isHost && <p className={styles.waitMsg}>Waiting for host...</p>}
+        <button className={styles.leaveBtn} onClick={handleLeave} type="button">
           Leave Room
         </button>
       </div>
+
+      {me && <ChatPanel roomCode={roomCode} uid={uid} username={me.username} avatarId={me.avatarId} />}
     </div>
   )
 }

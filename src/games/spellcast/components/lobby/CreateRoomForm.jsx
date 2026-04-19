@@ -10,14 +10,23 @@ export default function CreateRoomForm({ uid, onBack, onCreated }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  async function handleSubmit(e) {
-    e.preventDefault()
+  async function handleSubmit(event) {
+    event.preventDefault()
     const name = username.trim()
-    if (!name) { setError('Enter a username'); return }
-    if (name.length > 20) { setError('Username too long (max 20 chars)'); return }
+
+    if (!name) {
+      setError('Enter a username')
+      return
+    }
+
+    if (name.length > 20) {
+      setError('Username too long (max 20 chars)')
+      return
+    }
 
     setLoading(true)
     setError('')
+
     try {
       const roomCode = await createRoom(uid, name, avatarId)
       onCreated(roomCode)
@@ -29,8 +38,8 @@ export default function CreateRoomForm({ uid, onBack, onCreated }) {
 
   return (
     <div className={styles.card}>
-      <button className={styles.backBtn} onClick={onBack} type="button">← Back</button>
-      <h2 className={styles.heading}>Create a Room</h2>
+      <button className={styles.backBtn} onClick={onBack} type="button">&larr; Back</button>
+      <h2 className={styles.heading}>Create a Spellcast Room</h2>
 
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.field}>
@@ -40,7 +49,7 @@ export default function CreateRoomForm({ uid, onBack, onCreated }) {
             type="text"
             placeholder="Enter username..."
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(event) => setUsername(event.target.value)}
             maxLength={20}
             autoComplete="off"
             autoFocus
@@ -61,3 +70,4 @@ export default function CreateRoomForm({ uid, onBack, onCreated }) {
     </div>
   )
 }
+
