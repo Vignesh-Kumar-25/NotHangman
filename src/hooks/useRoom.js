@@ -17,6 +17,9 @@ export function useRoom(roomCode) {
         if (data.playerOrder && !Array.isArray(data.playerOrder)) {
           data.playerOrder = Object.values(data.playerOrder)
         }
+        if (data.game?.turnOrder && !Array.isArray(data.game.turnOrder)) {
+          data.game.turnOrder = Object.values(data.game.turnOrder)
+        }
         setRoom(data)
         setNotFound(false)
       }

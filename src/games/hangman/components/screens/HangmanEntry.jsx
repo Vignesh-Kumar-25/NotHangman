@@ -36,7 +36,7 @@ export default function HangmanEntry() {
 
       <div className={styles.hero}>
         <span className={styles.icon}>🔤</span>
-        <h1 className={styles.title}>Hangman</h1>
+        <h1 className={styles.title}>Not Hangman</h1>
         <p className={styles.subtitle}>
           The hangman game where your teammates choose your fate
         </p>

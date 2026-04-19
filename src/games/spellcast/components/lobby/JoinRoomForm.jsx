@@ -12,16 +12,29 @@ export default function JoinRoomForm({ uid, onBack, onJoined }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  async function handleSubmit(e) {
-    e.preventDefault()
+  async function handleSubmit(event) {
+    event.preventDefault()
     const name = username.trim()
     const code = normalizeRoomCode(roomCode)
-    if (!code || code.length !== 6) { setError('Enter a 6-character room code'); return }
-    if (!name) { setError('Enter a username'); return }
-    if (name.length > 20) { setError('Username too long (max 20 chars)'); return }
+
+    if (!code || code.length !== 6) {
+      setError('Enter a 6-character room code')
+      return
+    }
+
+    if (!name) {
+      setError('Enter a username')
+      return
+    }
+
+    if (name.length > 20) {
+      setError('Username too long (max 20 chars)')
+      return
+    }
 
     setLoading(true)
     setError('')
+
     try {
       await joinRoom(code, uid, name, avatarId)
       onJoined(code)
@@ -33,8 +46,8 @@ export default function JoinRoomForm({ uid, onBack, onJoined }) {
 
   return (
     <div className={styles.card}>
-      <button className={styles.backBtn} onClick={onBack} type="button">← Back</button>
-      <h2 className={styles.heading}>Join a Room</h2>
+      <button className={styles.backBtn} onClick={onBack} type="button">&larr; Back</button>
+      <h2 className={styles.heading}>Join a Not Spellcast Room</h2>
 
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.field}>
@@ -44,7 +57,7 @@ export default function JoinRoomForm({ uid, onBack, onJoined }) {
             type="text"
             placeholder="XXXXXX"
             value={roomCode}
-            onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+            onChange={(event) => setRoomCode(event.target.value.toUpperCase())}
             maxLength={6}
             autoComplete="off"
             autoFocus
@@ -59,7 +72,7 @@ export default function JoinRoomForm({ uid, onBack, onJoined }) {
             type="text"
             placeholder="Enter username..."
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(event) => setUsername(event.target.value)}
             maxLength={20}
             autoComplete="off"
           />

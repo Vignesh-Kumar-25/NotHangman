@@ -21,25 +21,31 @@
   cursor: pointer;
   transition: color 0.15s;
 }
+
 .backBtn:hover {
-  color: var(--accent-secondary);
+  color: #34d399;
 }
 
 .hero {
   text-align: center;
 }
 
-.icon {
+.iconWrap {
   font-size: 3rem;
   display: block;
   margin-bottom: 8px;
 }
 
+.icon {
+  display: inline-block;
+  filter: drop-shadow(0 0 12px #34d39988);
+}
+
 .title {
   font-family: var(--font-display);
-  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-size: clamp(2.6rem, 8vw, 4rem);
   line-height: 1;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  background: linear-gradient(135deg, #34d399, #fbbf24);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -49,7 +55,7 @@
 .subtitle {
   color: var(--text-secondary);
   font-size: 1.05rem;
-  max-width: 340px;
+  max-width: 380px;
   margin-inline: auto;
 }
 
@@ -73,13 +79,14 @@
 }
 
 .btnCreate {
-  background: var(--accent-primary);
-  color: #fff;
-  box-shadow: 0 4px 20px #7c3aed66;
+  background: linear-gradient(135deg, #34d399, #fbbf24);
+  color: #081019;
+  box-shadow: 0 4px 20px #34d39944;
 }
+
 .btnCreate:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px #7c3aed88;
+  box-shadow: 0 8px 28px #34d39966;
 }
 
 .btnJoin {
@@ -87,9 +94,10 @@
   color: var(--text-primary);
   border: 2px solid var(--border);
 }
+
 .btnJoin:hover {
-  border-color: var(--accent-secondary);
-  color: var(--accent-secondary);
+  border-color: #fbbf24;
+  color: #fbbf24;
   transform: translateY(-2px);
 }
 
@@ -98,14 +106,14 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 24px 32px;
-  max-width: 400px;
+  max-width: 420px;
   width: 100%;
 }
 
 .rules h2 {
   font-family: var(--font-display);
   font-size: 1.3rem;
-  color: var(--accent-secondary);
+  color: #34d399;
   margin-bottom: 12px;
 }
 
@@ -124,8 +132,9 @@
 }
 
 .rules li::before {
-  content: '\2192';
+  content: '\2726';
   position: absolute;
   left: 0;
-  color: var(--accent-primary);
+  color: #fbbf24;
 }
+

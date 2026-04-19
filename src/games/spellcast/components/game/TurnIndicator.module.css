@@ -1,9 +1,0 @@
-.indicator {
-  font-family: var(--font-display);
-  font-size: 1.3rem;
-  color: var(--text-primary);
-}
-
-.myTurn {
-  color: var(--accent-success);
-}
