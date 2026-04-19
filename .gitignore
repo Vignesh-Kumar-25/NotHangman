@@ -3,3 +3,6 @@ dist
 .env.local
 .env.*.local
 .env
+spellcast_logic_spec_v2.md
+spellcast_logic_spec.md
+spellcast_solo_round_fix.md

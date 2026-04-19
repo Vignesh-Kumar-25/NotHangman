@@ -38,7 +38,7 @@ export default function SpellcastEntry() {
         <div className={styles.iconWrap}>
           <span className={styles.icon}>&#10024;</span>
         </div>
-        <h1 className={styles.title}>Spellcast</h1>
+        <h1 className={styles.title}>Not Spellcast</h1>
         <p className={styles.subtitle}>
           Take turns tracing words on one shared rune field across 5 rounds. Casts rewrite only the path you used, so the board keeps evolving for the whole match.
         </p>
