@@ -145,6 +145,8 @@ export default function GameScreen({ room, roomCode, uid }) {
   const hintCount = myUtilityStock?.hint || 0
   const shuffleCount = myUtilityStock?.shuffle || 0
   const swapCount = myUtilityStock?.swap || 0
+  const actionBannerText = error || status || lastMoveText
+  const actionBannerTone = error ? styles.danger : status ? styles.safe : styles.warn
 
   useEffect(() => () => clearTimeout(invalidTimerRef.current), [])
 
@@ -429,7 +431,7 @@ export default function GameScreen({ room, roomCode, uid }) {
       </div>
 
       <div className={styles.actionMsgSlot}>
-        {showTurnTimer ? (
+        {showTurnTimer && (
           <div className={styles.turnTimerCard}>
             <div className={styles.turnTimerText}>
               {timerTriggerName} started a timer for {timerTargetName}.
@@ -441,9 +443,10 @@ export default function GameScreen({ room, roomCode, uid }) {
               />
             </div>
           </div>
-        ) : (status || error || lastMoveText) && (
-          <div className={`${styles.actionMsg} ${error ? styles.danger : status ? styles.safe : styles.warn}`}>
-            {error || status || lastMoveText}
+        )}
+        {actionBannerText && (
+          <div className={`${styles.actionMsg} ${actionBannerTone}`}>
+            {actionBannerText}
           </div>
         )}
       </div>
