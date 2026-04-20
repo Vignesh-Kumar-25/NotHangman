@@ -143,6 +143,7 @@ export async function startGame(roomCode, playerOrder, meta) {
       roundResults: null,
       roundWinner: null,
       matchWinner: null,
+      allSurvived: null,
       roundStartPlayerOffset: 0,
     },
   })
@@ -219,9 +220,44 @@ export async function revealTile(roomCode, uid, tileIndex) {
     updates['game/lastAction'] = {
       type: 'reveal', index: tileIndex, uid, timestamp: Date.now(),
     }
-    const nextIndex = getNextAlivePlayerIndex(game.currentTurnIndex, playerOrder, eliminated)
-    updates['game/currentTurnIndex'] = nextIndex
-    updates['game/turnStartedAt'] = Date.now()
+
+    const allRevealed = { ...revealed, ...newRevealed }
+    const totalSafe = rows * cols - (game.bombs || []).length
+    let safeCount = 0
+    for (const v of Object.values(allRevealed)) {
+      if (v !== -1) safeCount++
+    }
+
+    if (safeCount >= totalSafe) {
+      const currentRound = game.currentRound || 1
+      const totalRounds = game.totalRounds || 1
+      const alivePlayers = playerOrder.filter(
+        (id) => !eliminated[id] && room.players[id]?.connected !== false
+      )
+      const prevWins = game.roundWins || {}
+      const newWins = { ...prevWins }
+      for (const pid of alivePlayers) {
+        newWins[pid] = (newWins[pid] || 0) + 1
+      }
+      updates['game/roundWinner'] = null
+      updates['game/allSurvived'] = true
+      updates['game/roundWins'] = newWins
+      updates[`game/roundResults/${currentRound}`] = 'all_survived'
+
+      if (currentRound >= totalRounds) {
+        let matchWinner = null
+        let maxW = 0
+        for (const [pid, w] of Object.entries(newWins)) {
+          if (w > maxW) { maxW = w; matchWinner = pid }
+        }
+        updates['game/matchWinner'] = matchWinner
+      }
+      updates['game/state'] = GAME_STATES.ROUND_OVER
+    } else {
+      const nextIndex = getNextAlivePlayerIndex(game.currentTurnIndex, playerOrder, eliminated)
+      updates['game/currentTurnIndex'] = nextIndex
+      updates['game/turnStartedAt'] = Date.now()
+    }
   }
 
   await update(roomRef, updates)
@@ -251,6 +287,7 @@ export async function startNextRound(roomCode, meta) {
     'game/turnStartedAt': Date.now(),
     'game/lastAction': null,
     'game/roundWinner': null,
+    'game/allSurvived': null,
   })
 }
 
@@ -329,9 +366,44 @@ export async function skipTurn(roomCode) {
     updates['game/lastAction'] = {
       type: 'timeout_safe', index: randomIndex, uid, timestamp: Date.now(),
     }
-    const nextIndex = getNextAlivePlayerIndex(game.currentTurnIndex, playerOrder, eliminated)
-    updates['game/currentTurnIndex'] = nextIndex
-    updates['game/turnStartedAt'] = Date.now()
+
+    const allRevealed = { ...revealed, ...newRevealed }
+    const totalSafe = rows * cols - (game.bombs || []).length
+    let safeCount = 0
+    for (const v of Object.values(allRevealed)) {
+      if (v !== -1) safeCount++
+    }
+
+    if (safeCount >= totalSafe) {
+      const currentRound = game.currentRound || 1
+      const totalRounds = game.totalRounds || 1
+      const alivePlayers = playerOrder.filter(
+        (id) => !eliminated[id] && room.players[id]?.connected !== false
+      )
+      const prevWins = game.roundWins || {}
+      const newWins = { ...prevWins }
+      for (const pid of alivePlayers) {
+        newWins[pid] = (newWins[pid] || 0) + 1
+      }
+      updates['game/roundWinner'] = null
+      updates['game/allSurvived'] = true
+      updates['game/roundWins'] = newWins
+      updates[`game/roundResults/${currentRound}`] = 'all_survived'
+
+      if (currentRound >= totalRounds) {
+        let matchWinner = null
+        let maxW = 0
+        for (const [pid, w] of Object.entries(newWins)) {
+          if (w > maxW) { maxW = w; matchWinner = pid }
+        }
+        updates['game/matchWinner'] = matchWinner
+      }
+      updates['game/state'] = GAME_STATES.ROUND_OVER
+    } else {
+      const nextIndex = getNextAlivePlayerIndex(game.currentTurnIndex, playerOrder, eliminated)
+      updates['game/currentTurnIndex'] = nextIndex
+      updates['game/turnStartedAt'] = Date.now()
+    }
   }
 
   await update(roomRef, updates)
@@ -355,6 +427,7 @@ export async function resetGame(roomCode, playerOrder, meta) {
       roundResults: null,
       roundWinner: null,
       matchWinner: null,
+      allSurvived: null,
       roundStartPlayerOffset: 0,
     },
   })
