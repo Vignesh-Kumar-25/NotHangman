@@ -124,7 +124,8 @@ export default function GameScreen({ room, roomCode, uid }) {
       return `${playerName} used a hint.`
     }
     if (game.lastMove.action === 'turn_timer') {
-      return ''
+      const timedPlayerName = players[game.lastMove.turnUid]?.username || 'A mage'
+      return `${playerName} triggered a 10s timer on ${timedPlayerName}.`
     }
     if (game.lastMove.action === 'turn_timeout') {
       const timedPlayerName = players[game.lastMove.turnUid]?.username || 'A mage'
@@ -146,10 +147,12 @@ export default function GameScreen({ room, roomCode, uid }) {
   const timerTriggerName = turnTimer?.uid ? players[turnTimer.uid]?.username || 'A mage' : ''
   const timerRemainingMs = hasActiveTurnTimer ? Math.max(0, (turnTimer.endsAt || 0) - timerNow) : 0
   const showTurnTimer = hasActiveTurnTimer && timerRemainingMs > 0
+  const hasTriggeredTurnTimer = hasActiveTurnTimer && turnTimer?.uid && turnTimer.uid !== 'system'
+  const showTriggeredTurnTimer = hasTriggeredTurnTimer && timerRemainingMs > 0
   const timerProgress = hasActiveTurnTimer && turnTimer.startedAt && turnTimer.endsAt
     ? Math.max(0, Math.min(1, timerRemainingMs / Math.max(1, turnTimer.endsAt - turnTimer.startedAt)))
     : 0
-  const isTurnTimerCritical = showTurnTimer && timerRemainingMs <= 10000
+  const isTurnTimerCritical = showTriggeredTurnTimer && timerRemainingMs <= 10000
   const gemCount = myGemBalance || 0
   const hintCount = myUtilityStock?.hint || 0
   const shuffleCount = myUtilityStock?.shuffle || 0
@@ -365,7 +368,7 @@ export default function GameScreen({ room, roomCode, uid }) {
   }
 
   async function handleTurnTimer() {
-    if (isMyTurn || !currentTurnUid || hasActiveTurnTimer || !canUseTurnTimerPowerUp || turnTimerPowerUpBlockedByRemainingTime) return
+    if (isMyTurn || !currentTurnUid || hasTriggeredTurnTimer || !canUseTurnTimerPowerUp || turnTimerPowerUpBlockedByRemainingTime) return
     setError('')
     setStatus('')
 
@@ -458,21 +461,31 @@ export default function GameScreen({ room, roomCode, uid }) {
         )}
       </div>
 
-      {showTurnTimer ? (
+      {showTriggeredTurnTimer ? (
+        <div className={styles.turnTimerCard}>
+          <div className={styles.turnTimerRow}>
+            <span className={`${styles.turnCountdown} ${isTurnTimerCritical ? styles.turnCountdownCritical : ''}`}>
+              {formatTimerCountdown(timerRemainingMs)}
+            </span>
+          </div>
+          <div className={styles.turnTimerText}>
+            {`${timerTriggerName} triggered a timer on ${timerTargetName}`}
+          </div>
+          <div className={styles.turnTimerTrack}>
+            <div
+              className={styles.turnTimerFill}
+              style={{ transform: `scaleX(${timerProgress})` }}
+            />
+          </div>
+        </div>
+      ) : showTurnTimer ? (
         <div className={styles.turnTimerRow}>
-          <span className={`${styles.turnCountdown} ${isTurnTimerCritical ? styles.turnCountdownCritical : ''}`}>
+          <span className={styles.turnCountdown}>
             {formatTimerCountdown(timerRemainingMs)}
           </span>
         </div>
       ) : (
-        <div style={{ color: '#ef4444', fontSize: '0.75rem', textAlign: 'center', maxWidth: 720, wordBreak: 'break-all' }}>
-          DEBUG: timer={turnTimer ? JSON.stringify(turnTimer) : 'null'} |
-          currentTurnUid={String(currentTurnUid)} |
-          game.turnOrder={JSON.stringify(game?.turnOrder)} |
-          game.currentTurnIndex={String(game?.currentTurnIndex)} |
-          game.turnTimer={JSON.stringify(game?.turnTimer)} |
-          uid={uid}
-        </div>
+        <div />
       )}
 
       <div className={styles.gameArea}>
@@ -552,7 +565,7 @@ export default function GameScreen({ room, roomCode, uid }) {
             <button
               className={styles.utilityBtn}
               onClick={handleTurnTimer}
-              disabled={isMyTurn || !currentTurnUid || hasActiveTurnTimer || !canUseTurnTimerPowerUp || turnTimerPowerUpBlockedByRemainingTime}
+              disabled={isMyTurn || !currentTurnUid || hasTriggeredTurnTimer || !canUseTurnTimerPowerUp || turnTimerPowerUpBlockedByRemainingTime}
               aria-label="Turn Timer"
               title="Turn Timer"
               type="button"

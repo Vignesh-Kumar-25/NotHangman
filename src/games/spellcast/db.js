@@ -15,6 +15,7 @@ import {
   DEFAULT_NUM_ROUNDS,
   DEFAULT_TURN_TIMER_SECONDS,
   MIN_TURN_TIMER_POWER_UP_SECONDS,
+  TURN_TIMER_POWER_UP_DISABLE_THRESHOLD_SECONDS,
   DEFAULT_GEM_COUNT,
   DEFAULT_POWER_UP_COUNTS,
   POWER_UP_GEM_COSTS,
@@ -702,18 +703,29 @@ export async function triggerTurnTimer(roomCode, uid) {
       rejection = 'You cannot time your own turn'
       return
     }
-    if (room.game?.turnTimer?.turnUid === turnState.currentTurnUid) {
+    const currentTimer = room.game?.turnTimer
+    const activeTurnAlreadyHasPlayerTriggeredTimer =
+      currentTimer?.turnUid === turnState.currentTurnUid && currentTimer?.uid && currentTimer.uid !== 'system'
+    if (activeTurnAlreadyHasPlayerTriggeredTimer) {
       rejection = 'Timer already started for this turn'
+      return
+    }
+    const currentRemainingMs = currentTimer?.turnUid === turnState.currentTurnUid
+      ? Math.max(0, (currentTimer.endsAt || 0) - Date.now())
+      : 0
+    if (currentRemainingMs <= TURN_TIMER_POWER_UP_DISABLE_THRESHOLD_SECONDS * 1000) {
+      rejection = 'Not enough time remains to trigger the timer'
       return
     }
 
     const now = Date.now()
+    const durationMs = 10 * 1000
     room.game.turnTimer = {
       uid,
       turnUid: turnState.currentTurnUid,
       startedAt: now,
-      endsAt: now + configuredTurnTimerSeconds * 1000,
-      durationMs: configuredTurnTimerSeconds * 1000,
+      endsAt: now + durationMs,
+      durationMs,
     }
     room.game.lastMove = {
       uid,
@@ -753,7 +765,7 @@ export async function expireTurnTimer(roomCode, turnUid, endedAt) {
 
     const turnState = getTurnState(room)
     if (turnState.currentTurnUid !== turnUid) {
-      room.game.turnTimer = null
+      room.game.turnTimer = buildAutoTurnTimer(room)
       return room
     }
 
