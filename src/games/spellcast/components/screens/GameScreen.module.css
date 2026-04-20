@@ -53,6 +53,14 @@
   color: var(--text-secondary);
 }
 
+.roundStat {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: 0.04em;
+}
+
 .topActions {
   display: flex;
   align-items: center;
@@ -259,6 +267,56 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 18px;
+}
+
+.powerUpGuide {
+  width: 100%;
+  max-width: 720px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+}
+
+.powerUpGuideTitle {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+}
+
+.powerUpGuideList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.powerUpGuideItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #0f182b;
+  border: 1px solid #22344d;
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+.powerUpGuideIcon {
+  flex: 0 0 auto;
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.powerUpGuideText {
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.powerUpGuideText strong {
+  color: #f8fafc;
 }
 
 .metricsTitle {
@@ -636,6 +694,10 @@
     font-size: 0.7rem;
   }
 
+  .roundStat {
+    font-size: 0.95rem;
+  }
+
   .swapCard {
     padding: 16px 12px;
   }
@@ -647,6 +709,24 @@
   .metricsCard {
     padding: 14px;
     width: 100%;
+  }
+
+  .powerUpGuide {
+    padding: 14px;
+  }
+
+  .powerUpGuideList {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .powerUpGuideItem {
+    padding: 10px;
+  }
+
+  .powerUpGuideText {
+    font-size: 0.8rem;
   }
 
   .metricsGrid {

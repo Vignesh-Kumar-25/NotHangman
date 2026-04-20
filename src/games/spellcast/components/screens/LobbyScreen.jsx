@@ -120,101 +120,107 @@ export default function LobbyScreen({ room, roomCode, uid }) {
         </div>
       </div>
 
-      <div className={styles.roundsSection}>
-        <p className={styles.roundsLabel}>Rounds</p>
-        <div className={styles.roundsPicker}>
-          {isHost ? (
-            <>
-              <button
-                className={styles.stepBtn}
-                onClick={() => handleRoundsChange(-1)}
-                disabled={numRounds <= MIN_NUM_ROUNDS}
-                type="button"
-              >
-                -
-              </button>
+      <div className={styles.settingsSection}>
+        <div className={styles.settingBlock}>
+          <p className={styles.roundsLabel}>Rounds</p>
+          <div className={styles.roundsPicker}>
+            {isHost ? (
+              <>
+                <button
+                  className={styles.stepBtn}
+                  onClick={() => handleRoundsChange(-1)}
+                  disabled={numRounds <= MIN_NUM_ROUNDS}
+                  type="button"
+                >
+                  -
+                </button>
+                <span className={styles.roundsValue}>{numRounds}</span>
+                <button
+                  className={styles.stepBtn}
+                  onClick={() => handleRoundsChange(1)}
+                  disabled={numRounds >= MAX_NUM_ROUNDS}
+                  type="button"
+                >
+                  +
+                </button>
+              </>
+            ) : (
               <span className={styles.roundsValue}>{numRounds}</span>
-              <button
-                className={styles.stepBtn}
-                onClick={() => handleRoundsChange(1)}
-                disabled={numRounds >= MAX_NUM_ROUNDS}
-                type="button"
-              >
-                +
-              </button>
-            </>
-          ) : (
-            <span className={styles.roundsValue}>{numRounds}</span>
-          )}
+            )}
+          </div>
+          <p className={styles.roundsHint}>
+            1 round = every connected player gets one cast turn
+          </p>
         </div>
-        <p className={styles.roundsHint}>
-          1 round = every connected player gets one cast turn
-        </p>
-      </div>
 
-      <div className={styles.roundsSection}>
-        <p className={styles.roundsLabel}>Turn Timer</p>
-        <div className={styles.roundsPicker}>
-          {isHost ? (
-            <>
-              <button
-                className={styles.stepBtn}
-                onClick={() => handleTurnTimerChange(-TURN_TIMER_STEP_SECONDS)}
-                disabled={turnTimerSeconds <= MIN_TURN_TIMER_SECONDS}
-                type="button"
-              >
-                -
-              </button>
+        <div className={styles.settingDivider} />
+
+        <div className={styles.settingBlock}>
+          <p className={styles.roundsLabel}>Turn Timer</p>
+          <div className={styles.roundsPicker}>
+            {isHost ? (
+              <>
+                <button
+                  className={styles.stepBtn}
+                  onClick={() => handleTurnTimerChange(-TURN_TIMER_STEP_SECONDS)}
+                  disabled={turnTimerSeconds <= MIN_TURN_TIMER_SECONDS}
+                  type="button"
+                >
+                  -
+                </button>
+                <span className={styles.roundsValue}>{formatTurnTime(turnTimerSeconds)}</span>
+                <button
+                  className={styles.stepBtn}
+                  onClick={() => handleTurnTimerChange(TURN_TIMER_STEP_SECONDS)}
+                  disabled={turnTimerSeconds >= MAX_TURN_TIMER_SECONDS}
+                  type="button"
+                >
+                  +
+                </button>
+              </>
+            ) : (
               <span className={styles.roundsValue}>{formatTurnTime(turnTimerSeconds)}</span>
-              <button
-                className={styles.stepBtn}
-                onClick={() => handleTurnTimerChange(TURN_TIMER_STEP_SECONDS)}
-                disabled={turnTimerSeconds >= MAX_TURN_TIMER_SECONDS}
-                type="button"
-              >
-                +
-              </button>
-            </>
-          ) : (
-            <span className={styles.roundsValue}>{formatTurnTime(turnTimerSeconds)}</span>
-          )}
+            )}
+          </div>
+          <p className={styles.roundsHint}>
+            Seconds per turn
+          </p>
         </div>
-        <p className={styles.roundsHint}>
-          Seconds per turn
-        </p>
-      </div>
 
-      <div className={styles.roundsSection}>
-        <p className={styles.roundsLabel}>Timer Power-Up</p>
-        <div className={styles.roundsPicker}>
-          {isHost ? (
-            <>
-              <button
-                className={`${styles.optionBox} ${turnTimerPowerUpEnabled ? styles.optionBoxActive : ''}`}
-                onClick={() => handleTurnTimerPowerUpToggle(true)}
-                disabled={!canEnableTurnTimerPowerUp}
-                type="button"
-              >
-                Enabled
-              </button>
-              <button
-                className={`${styles.optionBox} ${!turnTimerPowerUpEnabled ? styles.optionBoxActive : ''}`}
-                onClick={() => handleTurnTimerPowerUpToggle(false)}
-                disabled={!canEnableTurnTimerPowerUp}
-                type="button"
-              >
-                Disabled
-              </button>
-            </>
-          ) : (
-            <span className={styles.roundsValue}>
-              {turnTimerPowerUpEnabled && canEnableTurnTimerPowerUp ? 'On' : 'Off'}
-            </span>
-          )}
+        <div className={styles.settingDivider} />
+
+        <div className={styles.settingBlock}>
+          <p className={styles.roundsLabel}>Timer Power-Up</p>
+          <div className={styles.roundsPicker}>
+            {isHost ? (
+              <>
+                <button
+                  className={`${styles.optionBox} ${turnTimerPowerUpEnabled ? styles.optionBoxActive : ''}`}
+                  onClick={() => handleTurnTimerPowerUpToggle(true)}
+                  disabled={!canEnableTurnTimerPowerUp}
+                  type="button"
+                >
+                  Enabled
+                </button>
+                <button
+                  className={`${styles.optionBox} ${!turnTimerPowerUpEnabled ? styles.optionBoxActive : ''}`}
+                  onClick={() => handleTurnTimerPowerUpToggle(false)}
+                  disabled={!canEnableTurnTimerPowerUp}
+                  type="button"
+                >
+                  Disabled
+                </button>
+              </>
+            ) : (
+              <span className={styles.roundsValue}>
+                {turnTimerPowerUpEnabled && canEnableTurnTimerPowerUp ? 'On' : 'Off'}
+              </span>
+            )}
+          </div>
+          <p className={styles.roundsHint}>
+            Lets you force the active opponent onto a 10 second timer.
+          </p>
         </div>
-        <p className={styles.roundsHint}>
-          Disabled by default. Unavailable when the timer is below {MIN_TURN_TIMER_POWER_UP_SECONDS} seconds.
-        </p>
       </div>
 
       {error && <p className={styles.error}>{error}</p>}

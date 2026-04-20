@@ -436,7 +436,7 @@ export async function reshuffleBoard(roomCode, uid, expectedVersion) {
     const nextGemTiles = buildGemTiles(
       shuffled.rows,
       boardState.gemTiles || {},
-      rows.flat().map((_, index) => index),
+      shuffled.rows.flat().map((_, index) => index),
     )
     room.game.lastMove = {
       uid,

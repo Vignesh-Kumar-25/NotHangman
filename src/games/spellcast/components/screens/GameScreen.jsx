@@ -210,7 +210,7 @@ export default function GameScreen({ room, roomCode, uid }) {
     const requestKey = `${turnTimer.turnUid}-${turnTimer.endsAt}`
     if (timerExpiryRequestedRef.current === requestKey) return
     timerExpiryRequestedRef.current = requestKey
-    expireTurnTimer(roomCode, turnTimer.turnUid, turnTimer.endsAt).catch(() => {})
+    expireTurnTimer(roomCode, turnTimer.turnUid, turnTimer.endsAt).catch(() => { })
   }, [hasActiveTurnTimer, roomCode, timerRemainingMs, turnTimer?.endsAt, turnTimer?.turnUid])
 
   useEffect(() => {
@@ -261,7 +261,7 @@ export default function GameScreen({ room, roomCode, uid }) {
 
   useEffect(() => {
     if (!isMyTurn || !boardState) return
-    updateLiveSelection(roomCode, uid, path, boardState.version).catch(() => {})
+    updateLiveSelection(roomCode, uid, path, boardState.version).catch(() => { })
   }, [boardState?.version, isMyTurn, path, roomCode, uid])
 
   useEffect(() => {
@@ -426,8 +426,7 @@ export default function GameScreen({ room, roomCode, uid }) {
           <span className={styles.roomCodeSmall}>{roomCode}</span>
         </div>
         <div className={styles.stats}>
-          <span className={styles.stat}>Round {currentRound}/{totalRounds}</span>
-          <span className={styles.stat}>Turn Timer {turnTimerSeconds}s</span>
+          <span className={`${styles.stat} ${styles.roundStat}`}>Round {currentRound}/{totalRounds}</span>
         </div>
         <div className={styles.topActions}>
           <button
@@ -604,6 +603,28 @@ export default function GameScreen({ room, roomCode, uid }) {
             </div>
           </div>
         )}
+      </div>
+
+      <div className={styles.powerUpGuide}>
+        <div className={styles.powerUpGuideTitle}>Power-Ups</div>
+        <div className={styles.powerUpGuideList}>
+          <div className={styles.powerUpGuideItem}>
+            <span className={styles.powerUpGuideIcon}>{'\uD83D\uDCA1'}</span>
+            <span className={styles.powerUpGuideText}><strong>Hint:</strong> Reveals a word that you can find on the board.</span>
+          </div>
+          <div className={styles.powerUpGuideItem}>
+            <span className={styles.powerUpGuideIcon}>{'\uD83D\uDD00'}</span>
+            <span className={styles.powerUpGuideText}><strong>Shuffle:</strong> Mixes the current board into a new accepted layout.</span>
+          </div>
+          <div className={styles.powerUpGuideItem}>
+            <span className={styles.powerUpGuideIcon}>{'\uD83D\uDD04'}</span>
+            <span className={styles.powerUpGuideText}><strong>Swap:</strong> Replaces one selected tile with a letter of your choice.</span>
+          </div>
+          <div className={styles.powerUpGuideItem}>
+            <span className={styles.powerUpGuideIcon}>{'\u23F3'}</span>
+            <span className={styles.powerUpGuideText}><strong>Turn Timer:</strong> Puts the active player on a 10 second timer (WARNING: may rage-bait the opponent).</span>
+          </div>
+        </div>
       </div>
 
       {swapOverlayOpen && (
