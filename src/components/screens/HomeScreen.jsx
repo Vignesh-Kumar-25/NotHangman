@@ -24,6 +24,7 @@ const GAMES = [
     name: 'Not Chess',
     description: 'Strategic chess on a compact 5\u00d78 board. Checkmate to win!',
     icon: '\u265B',
+    iconClassName: 'cardIconChess',
     path: '/chess',
     available: true,
   },
@@ -65,7 +66,9 @@ export default function HomeScreen() {
             onClick={() => game.available && navigate(game.path)}
             disabled={!game.available}
           >
-            <span className={styles.cardIcon}>{game.icon}</span>
+            <span className={[styles.cardIcon, game.iconClassName ? styles[game.iconClassName] : ''].join(' ').trim()}>
+              {game.icon}
+            </span>
             <h2 className={styles.cardName}>{game.name}</h2>
             <p className={styles.cardDesc}>{game.description}</p>
             {game.available && <span className={styles.cardAction}>Play</span>}

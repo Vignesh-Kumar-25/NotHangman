@@ -4,6 +4,7 @@ import {
   get,
   update,
   onDisconnect,
+  onValue,
   push,
   runTransaction,
 } from 'firebase/database'
@@ -116,6 +117,24 @@ export async function joinRoom(roomCode, uid, username, avatarId) {
   })
 
   onDisconnect(ref(db, `rooms/${roomCode}/players/${uid}/connected`)).set(false)
+}
+
+export async function reconnectRoomPresence(roomCode, uid) {
+  if (!roomCode || !uid) return false
+
+  const playerRef = ref(db, `rooms/${roomCode}/players/${uid}`)
+  const snapshot = await get(playerRef)
+  if (!snapshot.exists()) return false
+
+  await update(playerRef, { connected: true })
+  onDisconnect(ref(db, `rooms/${roomCode}/players/${uid}/connected`)).set(false)
+  return true
+}
+
+export function subscribeToPresenceConnection(callback) {
+  return onValue(ref(db, '.info/connected'), (snapshot) => {
+    callback(Boolean(snapshot.val()))
+  })
 }
 
 export async function leaveRoom(roomCode, uid) {

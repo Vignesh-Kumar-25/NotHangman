@@ -41,10 +41,10 @@ export function playWordComplete(length) {
   const notes = length <= 3
     ? [523.25, 659.25]
     : length === 4
-    ? [523.25, 659.25, 783.99]
-    : length === 5
-    ? [523.25, 659.25, 783.99, 1046.5]
-    : [523.25, 659.25, 783.99, 1046.5, 1318.51]
+      ? [523.25, 659.25, 783.99]
+      : length === 5
+        ? [523.25, 659.25, 783.99, 1046.5]
+        : [523.25, 659.25, 783.99, 1046.5, 1318.51]
 
   notes.forEach((freq, index) => {
     playTone(freq, 0.12 + index * 0.02, 'triangle', 0.18 + index * 0.02, index * 0.09)
@@ -101,8 +101,8 @@ function schedulePad(ac, gainNode, chord, startTime, duration) {
     filter.type = 'lowpass'
     filter.frequency.setValueAtTime(1400, startTime)
     env.gain.setValueAtTime(0.0001, startTime)
-    env.gain.linearRampToValueAtTime(0.05, startTime + 0.35)
-    env.gain.linearRampToValueAtTime(0.03, startTime + duration * 0.7)
+    env.gain.linearRampToValueAtTime(0.12, startTime + 0.35)
+    env.gain.linearRampToValueAtTime(0.07, startTime + duration * 0.7)
     env.gain.exponentialRampToValueAtTime(0.0001, startTime + duration)
     osc.start(startTime)
     osc.stop(startTime + duration + 0.08)
@@ -117,8 +117,8 @@ function scheduleBass(ac, gainNode, freq, startTime, duration) {
   osc.type = 'sine'
   osc.frequency.setValueAtTime(freq, startTime)
   env.gain.setValueAtTime(0.0001, startTime)
-  env.gain.linearRampToValueAtTime(0.08, startTime + 0.02)
-  env.gain.linearRampToValueAtTime(0.04, startTime + duration * 0.5)
+  env.gain.linearRampToValueAtTime(0.2, startTime + 0.02)
+  env.gain.linearRampToValueAtTime(0.11, startTime + duration * 0.5)
   env.gain.exponentialRampToValueAtTime(0.0001, startTime + duration)
   osc.start(startTime)
   osc.stop(startTime + duration + 0.05)
@@ -138,7 +138,7 @@ function scheduleLead(ac, gainNode, freq, startTime) {
   vibrato.frequency.setValueAtTime(5.5, startTime)
   vibratoGain.gain.setValueAtTime(4, startTime)
   env.gain.setValueAtTime(0.0001, startTime)
-  env.gain.linearRampToValueAtTime(0.035, startTime + 0.03)
+  env.gain.linearRampToValueAtTime(0.09, startTime + 0.03)
   env.gain.exponentialRampToValueAtTime(0.0001, startTime + EIGHTH * 1.7)
   osc.start(startTime)
   vibrato.start(startTime)
@@ -154,7 +154,7 @@ function scheduleSparkle(ac, gainNode, startTime) {
   osc.type = 'sine'
   osc.frequency.setValueAtTime(1567.98, startTime)
   env.gain.setValueAtTime(0.0001, startTime)
-  env.gain.linearRampToValueAtTime(0.015, startTime + 0.01)
+  env.gain.linearRampToValueAtTime(0.04, startTime + 0.01)
   env.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.18)
   osc.start(startTime)
   osc.stop(startTime + 0.2)
@@ -166,7 +166,7 @@ function scheduleBgBar(startTime) {
 
   if (!bgGain) {
     bgGain = ac.createGain()
-    bgGain.gain.value = 0.06
+    bgGain.gain.value = 0.1
     bgGain.connect(ac.destination)
   }
 
