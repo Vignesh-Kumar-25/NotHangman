@@ -101,9 +101,9 @@
 
 .blackPiece {
   color: #1a1a2e;
-  -webkit-text-stroke: 1px #94a3b8;
+  -webkit-text-stroke: 1px #a0e8ff;
   paint-order: stroke fill;
-  filter: drop-shadow(1px 2px 2px #0004);
+  filter: drop-shadow(0 0 6px #00e5ff88) drop-shadow(0 0 12px #00e5ff44);
 }
 
 .dot {
