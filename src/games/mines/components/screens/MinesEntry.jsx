@@ -40,17 +40,17 @@ export default function MinesEntry() {
         </div>
         <h1 className={styles.title}>Not Minesweeper</h1>
         <p className={styles.subtitle}>
-          Take turns revealing tiles. Hit a bomb and you&rsquo;re out. Last player standing wins!
+          Play solo or with friends. Reveal tiles, avoid bombs, and survive the round.
         </p>
       </div>
 
       <div className={styles.rules}>
         <h2>How to play</h2>
         <ul>
-          <li>Players take turns clicking one tile each</li>
+          <li>Play solo or take turns with other players clicking one tile each</li>
           <li>Safe tiles show the number of adjacent bombs</li>
-          <li>Hit a bomb and you&rsquo;re eliminated</li>
-          <li>Last surviving player wins the match</li>
+          <li>Hit a bomb and you&rsquo;re eliminated for the round</li>
+          <li>Clear the board or be the last survivor to win the round</li>
         </ul>
       </div>
 

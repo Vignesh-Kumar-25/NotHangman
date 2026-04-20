@@ -33,6 +33,7 @@ export default function GameScreen({ room, roomCode, uid }) {
   const roundWinner = game.roundWinner
   const roundWinnerPlayer = roundWinner ? players[roundWinner] : null
   const allSurvived = game.allSurvived || false
+  const isFinalRound = currentRound >= totalRounds
 
   // Background music
   useEffect(() => {
@@ -62,7 +63,7 @@ export default function GameScreen({ room, roomCode, uid }) {
       playExplosion()
       setExplosionPopup({ playerName, wasTimeout: action.type === 'timeout_explode' })
       setActionMsg(null)
-      const isFinal = !!game.matchWinner
+      const isFinal = isRoundOver && isFinalRound
       const delay = isFinal ? 2000 : 3500
       const timeout = setTimeout(() => {
         setExplosionPopup(null)
@@ -80,7 +81,7 @@ export default function GameScreen({ room, roomCode, uid }) {
     }
     const timeout = setTimeout(() => setActionMsg(null), 3000)
     return () => clearTimeout(timeout)
-  }, [game.lastAction, players])
+  }, [game.lastAction, players, isRoundOver, isFinalRound, roomCode])
 
   // Round win sound
   useEffect(() => {
@@ -101,15 +102,24 @@ export default function GameScreen({ room, roomCode, uid }) {
     return () => clearTimeout(skipTimerRef.current)
   }, [isHost, turnTimeLimit, game.turnStartedAt, game.currentTurnIndex, roomCode, game.state])
 
+  // Host auto-finish after the last round when there is no explosion popup to drive the transition.
+  useEffect(() => {
+    if (!isHost || !isRoundOver || !isFinalRound || explosionPopup) return
+    const timeout = setTimeout(() => {
+      finishMatch(roomCode)
+    }, 2000)
+    return () => clearTimeout(timeout)
+  }, [isHost, isRoundOver, isFinalRound, explosionPopup, roomCode])
+
   // Host auto-advance to next round after delay (skip if final round)
   useEffect(() => {
-    if (!isHost || !isRoundOver || game.matchWinner) return
+    if (!isHost || !isRoundOver || isFinalRound) return
     clearTimeout(nextRoundTimerRef.current)
     nextRoundTimerRef.current = setTimeout(() => {
       startNextRound(roomCode, meta)
     }, 5000)
     return () => clearTimeout(nextRoundTimerRef.current)
-  }, [isHost, isRoundOver, roomCode, meta, game.matchWinner])
+  }, [isHost, isRoundOver, isFinalRound, roomCode, meta])
 
   const handleTileClick = useCallback(async (index) => {
     if (!isMyTurn || clicking || amEliminated) return
@@ -235,7 +245,7 @@ export default function GameScreen({ room, roomCode, uid }) {
       )}
 
       {/* Round over overlay (not shown for final round) */}
-      {isRoundOver && !explosionPopup && !game.matchWinner && (
+      {isRoundOver && !explosionPopup && !isFinalRound && (
         <div className={styles.popupOverlay}>
           <div className={styles.roundOverCard}>
             <h2 className={styles.roundOverTitle}>Round {currentRound} Complete!</h2>
