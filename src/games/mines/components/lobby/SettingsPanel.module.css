@@ -66,6 +66,41 @@
   cursor: not-allowed;
 }
 
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stepBtn {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  width: 36px;
+  height: 36px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background 0.12s, border-color 0.15s;
+}
+.stepBtn:hover:not(:disabled) {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+.stepBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.stepValue {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: #f59e0b;
+  min-width: 2ch;
+  text-align: center;
+}
+
 .hint {
   color: var(--text-muted);
   font-size: 0.8rem;

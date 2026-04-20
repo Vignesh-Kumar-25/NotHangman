@@ -24,8 +24,6 @@ export const TURN_TIME_OPTIONS = [
   { label: 'No limit', value: 0 },
 ]
 
-export const ROUND_OPTIONS = [1, 3, 5, 7]
-
 export const GAME_STATES = {
   LOBBY: 'lobby',
   PLAYING: 'playing',

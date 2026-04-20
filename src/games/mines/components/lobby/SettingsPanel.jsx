@@ -1,5 +1,5 @@
 import { updateSettings } from '../../db'
-import { BOARD_SIZE_OPTIONS, BOMB_PRESETS, TURN_TIME_OPTIONS, ROUND_OPTIONS } from '../../constants/gameConfig'
+import { BOARD_SIZE_OPTIONS, BOMB_PRESETS, TURN_TIME_OPTIONS } from '../../constants/gameConfig'
 import styles from './SettingsPanel.module.css'
 
 export default function SettingsPanel({ roomCode, meta, isHost }) {
@@ -9,9 +9,10 @@ export default function SettingsPanel({ roomCode, meta, isHost }) {
   const currentTimeLimit = meta.turnTimeLimit ?? 30
   const currentRounds = meta.numRounds ?? 3
 
-  async function handleRounds(count) {
+  async function handleRoundsChange(delta) {
     if (!isHost) return
-    await updateSettings(roomCode, { numRounds: count })
+    const next = Math.min(10, Math.max(1, currentRounds + delta))
+    if (next !== currentRounds) await updateSettings(roomCode, { numRounds: next })
   }
 
   async function handleBoardSize(rows, cols) {
@@ -91,17 +92,24 @@ export default function SettingsPanel({ roomCode, meta, isHost }) {
 
       <div className={styles.setting}>
         <span className={styles.label}>Rounds</span>
-        <div className={styles.options}>
-          {ROUND_OPTIONS.map((count) => (
-            <button
-              key={count}
-              className={`${styles.optBtn} ${currentRounds === count ? styles.active : ''}`}
-              onClick={() => handleRounds(count)}
-              disabled={!isHost}
-            >
-              {count}
-            </button>
-          ))}
+        <div className={styles.stepper}>
+          {isHost ? (
+            <>
+              <button
+                className={styles.stepBtn}
+                onClick={() => handleRoundsChange(-1)}
+                disabled={currentRounds <= 1}
+              >−</button>
+              <span className={styles.stepValue}>{currentRounds}</span>
+              <button
+                className={styles.stepBtn}
+                onClick={() => handleRoundsChange(1)}
+                disabled={currentRounds >= 10}
+              >+</button>
+            </>
+          ) : (
+            <span className={styles.stepValue}>{currentRounds}</span>
+          )}
         </div>
       </div>
 
