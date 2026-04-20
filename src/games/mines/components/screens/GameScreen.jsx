@@ -32,6 +32,7 @@ export default function GameScreen({ room, roomCode, uid }) {
   const isRoundOver = game.state === GAME_STATES.ROUND_OVER
   const roundWinner = game.roundWinner
   const roundWinnerPlayer = roundWinner ? players[roundWinner] : null
+  const allSurvived = game.allSurvived || false
 
   // Background music
   useEffect(() => {
@@ -83,8 +84,8 @@ export default function GameScreen({ room, roomCode, uid }) {
 
   // Round win sound
   useEffect(() => {
-    if (isRoundOver && roundWinner) playRoundWin()
-  }, [isRoundOver, roundWinner])
+    if (isRoundOver && (roundWinner || allSurvived)) playRoundWin()
+  }, [isRoundOver, roundWinner, allSurvived])
 
   // Host auto-skip on turn timeout
   useEffect(() => {
@@ -238,12 +239,16 @@ export default function GameScreen({ room, roomCode, uid }) {
         <div className={styles.popupOverlay}>
           <div className={styles.roundOverCard}>
             <h2 className={styles.roundOverTitle}>Round {currentRound} Complete!</h2>
-            {roundWinnerPlayer && (
+            {allSurvived ? (
+              <div className={styles.roundWinnerSection}>
+                <p className={styles.roundWinnerName}>All safe tiles cleared! Everyone survives!</p>
+              </div>
+            ) : roundWinnerPlayer ? (
               <div className={styles.roundWinnerSection}>
                 <Avatar avatarId={roundWinnerPlayer.avatarId} size={56} />
                 <p className={styles.roundWinnerName}>{roundWinnerPlayer.username} wins this round!</p>
               </div>
-            )}
+            ) : null}
             <div className={styles.roundScores}>
               {playerOrder.map((id) => {
                 const p = players[id]

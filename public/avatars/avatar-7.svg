@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Dragon -->
+  <!-- Head -->
+  <ellipse cx="32" cy="34" rx="20" ry="18" fill="#dc2626" stroke="#991b1b" stroke-width="1.5"/>
+  <!-- Horns -->
+  <polygon points="14,20 6,4 20,16" fill="#fbbf24" stroke="#d97706" stroke-width="1"/>
+  <polygon points="50,20 58,4 44,16" fill="#fbbf24" stroke="#d97706" stroke-width="1"/>
+  <!-- Snout -->
+  <ellipse cx="32" cy="42" rx="12" ry="8" fill="#ef4444"/>
+  <!-- Nostrils -->
+  <circle cx="27" cy="42" r="2" fill="#7f1d1d"/>
+  <circle cx="37" cy="42" r="2" fill="#7f1d1d"/>
+  <!-- Eyes -->
+  <ellipse cx="23" cy="30" rx="5" ry="6" fill="#fbbf24"/>
+  <ellipse cx="41" cy="30" rx="5" ry="6" fill="#fbbf24"/>
+  <!-- Pupils -->
+  <ellipse cx="23" cy="30" rx="2" ry="5" fill="#1c1917"/>
+  <ellipse cx="41" cy="30" rx="2" ry="5" fill="#1c1917"/>
+  <!-- Shine -->
+  <circle cx="25" cy="28" r="1.5" fill="white" opacity="0.7"/>
+  <circle cx="43" cy="28" r="1.5" fill="white" opacity="0.7"/>
+  <!-- Teeth -->
+  <polygon points="26,48 28,52 30,48" fill="white"/>
+  <polygon points="34,48 36,52 38,48" fill="white"/>
+</svg>

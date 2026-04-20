@@ -109,11 +109,14 @@ export default function GameOverScreen({ room, roomCode, uid }) {
           <h3 className={styles.standingsTitle}>Round Results</h3>
           {Array.from({ length: totalRounds }, (_, i) => i + 1).map((r) => {
             const winnerId = roundResults[r]
-            const winnerP = winnerId ? players[winnerId] : null
+            const isSurvived = winnerId === 'all_survived'
+            const winnerP = !isSurvived && winnerId ? players[winnerId] : null
             return (
               <div key={r} className={styles.roundRow}>
                 <span className={styles.roundNum}>Round {r}</span>
-                {winnerP ? (
+                {isSurvived ? (
+                  <span className={styles.roundWinnerLabel}>All survived</span>
+                ) : winnerP ? (
                   <span className={styles.roundWinnerLabel}>{winnerP.username}</span>
                 ) : (
                   <span className={styles.roundDash}>&mdash;</span>

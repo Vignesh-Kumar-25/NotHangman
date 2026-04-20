@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Penguin -->
+  <!-- Body -->
+  <ellipse cx="32" cy="36" rx="20" ry="24" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/>
+  <!-- Belly -->
+  <ellipse cx="32" cy="40" rx="13" ry="16" fill="#f1f5f9"/>
+  <!-- Eyes -->
+  <circle cx="24" cy="28" r="5" fill="white"/>
+  <circle cx="40" cy="28" r="5" fill="white"/>
+  <!-- Pupils -->
+  <circle cx="25" cy="28" r="3" fill="#1c1917"/>
+  <circle cx="41" cy="28" r="3" fill="#1c1917"/>
+  <!-- Shine -->
+  <circle cx="26" cy="26" r="1.2" fill="white"/>
+  <circle cx="42" cy="26" r="1.2" fill="white"/>
+  <!-- Beak -->
+  <polygon points="32,33 27,38 37,38" fill="#f59e0b" stroke="#d97706" stroke-width="1"/>
+  <!-- Feet -->
+  <ellipse cx="24" cy="58" rx="6" ry="3" fill="#f59e0b"/>
+  <ellipse cx="40" cy="58" rx="6" ry="3" fill="#f59e0b"/>
+</svg>

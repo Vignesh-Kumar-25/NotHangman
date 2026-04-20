@@ -14,7 +14,7 @@ export const BOARD_SIZE_OPTIONS = [
   { label: '16\u00d716', rows: 16, cols: 16 },
 ]
 
-export const BOMB_PRESETS = [10, 15, 20, 25, 30]
+export const BOMB_PRESETS = [20, 25, 30, 40, 50] 
 
 export const TURN_TIME_OPTIONS = [
   { label: '15s', value: 15 },
