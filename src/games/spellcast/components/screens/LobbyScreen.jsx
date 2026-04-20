@@ -6,10 +6,11 @@ import {
   DEFAULT_NUM_ROUNDS,
   DEFAULT_TURN_TIMER_SECONDS,
   MAX_PLAYERS,
+  MAX_NUM_ROUNDS,
   MAX_TURN_TIMER_SECONDS,
   MIN_TURN_TIMER_POWER_UP_SECONDS,
+  MIN_NUM_ROUNDS,
   MIN_TURN_TIMER_SECONDS,
-  ROUND_OPTIONS,
   TURN_TIMER_STEP_SECONDS,
 } from '../../constants/gameConfig'
 import { leaveRoom, setRoomNumRounds, setRoomTurnTimer, setTurnTimerPowerUpEnabled, startGame } from '../../db'
@@ -53,7 +54,8 @@ export default function LobbyScreen({ room, roomCode, uid }) {
     }
   }
 
-  async function handleRoundsChange(next) {
+  async function handleRoundsChange(delta) {
+    const next = Math.max(MIN_NUM_ROUNDS, Math.min(MAX_NUM_ROUNDS, numRounds + delta))
     if (next !== numRounds) {
       await setRoomNumRounds(roomCode, next)
     }
@@ -122,16 +124,25 @@ export default function LobbyScreen({ room, roomCode, uid }) {
         <p className={styles.roundsLabel}>Rounds</p>
         <div className={styles.roundsPicker}>
           {isHost ? (
-            ROUND_OPTIONS.map((roundOption) => (
+            <>
               <button
-                key={roundOption}
-                className={`${styles.optionBox} ${roundOption === numRounds ? styles.optionBoxActive : ''}`}
-                onClick={() => handleRoundsChange(roundOption)}
+                className={styles.stepBtn}
+                onClick={() => handleRoundsChange(-1)}
+                disabled={numRounds <= MIN_NUM_ROUNDS}
                 type="button"
               >
-                {roundOption}
+                -
               </button>
-            ))
+              <span className={styles.roundsValue}>{numRounds}</span>
+              <button
+                className={styles.stepBtn}
+                onClick={() => handleRoundsChange(1)}
+                disabled={numRounds >= MAX_NUM_ROUNDS}
+                type="button"
+              >
+                +
+              </button>
+            </>
           ) : (
             <span className={styles.roundsValue}>{numRounds}</span>
           )}
@@ -169,7 +180,7 @@ export default function LobbyScreen({ room, roomCode, uid }) {
           )}
         </div>
         <p className={styles.roundsHint}>
-          Timer power-up duration. Changes in 5-second steps.
+          Seconds per turn
         </p>
       </div>
 

@@ -458,11 +458,20 @@ export default function GameScreen({ room, roomCode, uid }) {
         )}
       </div>
 
-      {showTurnTimer && (
+      {showTurnTimer ? (
         <div className={styles.turnTimerRow}>
           <span className={`${styles.turnCountdown} ${isTurnTimerCritical ? styles.turnCountdownCritical : ''}`}>
             {formatTimerCountdown(timerRemainingMs)}
           </span>
+        </div>
+      ) : (
+        <div style={{ color: '#ef4444', fontSize: '0.75rem', textAlign: 'center', maxWidth: 720, wordBreak: 'break-all' }}>
+          DEBUG: timer={turnTimer ? JSON.stringify(turnTimer) : 'null'} |
+          currentTurnUid={String(currentTurnUid)} |
+          game.turnOrder={JSON.stringify(game?.turnOrder)} |
+          game.currentTurnIndex={String(game?.currentTurnIndex)} |
+          game.turnTimer={JSON.stringify(game?.turnTimer)} |
+          uid={uid}
         </div>
       )}
 
