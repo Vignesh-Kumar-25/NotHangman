@@ -7,6 +7,7 @@ export function useBoardSelection(rows) {
   const draggingRef = useRef(false)
   const activePointerIdRef = useRef(null)
   const suppressClickIndexRef = useRef(null)
+  const touchBacktrackCandidateRef = useRef(null)
 
   const endSelection = useCallback(function endSelection(pointerId = null) {
     if (pointerId !== null && activePointerIdRef.current !== null && pointerId !== activePointerIdRef.current) {
@@ -14,12 +15,14 @@ export function useBoardSelection(rows) {
     }
     draggingRef.current = false
     activePointerIdRef.current = null
+    touchBacktrackCandidateRef.current = null
     setDragging(false)
   }, [])
 
   const clearSelection = useCallback(function clearSelection() {
     endSelection()
     suppressClickIndexRef.current = null
+    touchBacktrackCandidateRef.current = null
     setPath([])
   }, [endSelection])
 
@@ -59,10 +62,12 @@ export function useBoardSelection(rows) {
     activePointerIdRef.current = pointerId
     setDragging(true)
     suppressClickIndexRef.current = index
+    touchBacktrackCandidateRef.current = null
     setPath((current) => {
       if (current.length === 1 && current[0] === index) {
         draggingRef.current = false
         activePointerIdRef.current = null
+        touchBacktrackCandidateRef.current = null
         setDragging(false)
         return []
       }
@@ -76,9 +81,40 @@ export function useBoardSelection(rows) {
     })
   }
 
-  function handlePointerEnter(index) {
+  function handlePointerEnter(index, pointerType = 'mouse') {
     if (!draggingRef.current) return
-    appendIndex(index)
+
+    if (pointerType !== 'touch') {
+      touchBacktrackCandidateRef.current = null
+      appendIndex(index)
+      return
+    }
+
+    setPath((current) => {
+      if (current.length === 0) return [index]
+      const last = current[current.length - 1]
+      if (index === last) {
+        touchBacktrackCandidateRef.current = null
+        return current
+      }
+
+      const previous = current[current.length - 2]
+      if (current.length > 1 && index === previous) {
+        if (touchBacktrackCandidateRef.current === index) {
+          touchBacktrackCandidateRef.current = null
+          return current.slice(0, -1)
+        }
+        touchBacktrackCandidateRef.current = index
+        return current
+      }
+
+      touchBacktrackCandidateRef.current = null
+      if (current.includes(index) || !areAdjacent(last, index)) {
+        return current
+      }
+
+      return [...current, index]
+    })
   }
 
   function handleTileClick(index) {

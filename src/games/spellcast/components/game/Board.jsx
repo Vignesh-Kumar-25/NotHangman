@@ -31,6 +31,7 @@ function getDirectionClass(fromIndex, toIndex) {
 
 export default function Board({
   rows,
+  gemTiles,
   path,
   remotePath,
   invalidPath,
@@ -47,6 +48,7 @@ export default function Board({
   const remoteSelected = new Set(remotePath || [])
   const invalid = new Set(invalidPath || [])
   const lastMove = new Set(lastMoveTiles || [])
+  const gemTileMap = gemTiles || {}
   const activePointerIdRef = useRef(null)
   const activeTouchPointerIdRef = useRef(null)
   const ignorePointerUntilRef = useRef(0)
@@ -71,7 +73,7 @@ export default function Board({
       if (activePointerIdRef.current !== null && event.pointerId !== activePointerIdRef.current) {
         return
       }
-      handlePointerMoveAtPoint(event.clientX, event.clientY, event.target)
+      handlePointerMoveAtPoint(event.clientX, event.clientY, event.pointerType)
     }
 
     function handleWindowPointerEnd(event) {
@@ -96,18 +98,18 @@ export default function Board({
     }
   }, [onSelectionEnd])
 
-  function handlePointerMoveAtPoint(clientX, clientY, fallbackTarget) {
+  function handlePointerMoveAtPoint(clientX, clientY, pointerType = 'mouse') {
     const element = document.elementFromPoint(clientX, clientY)
-    const index = resolveTileIndex(element) ?? resolveTileIndex(fallbackTarget)
+    const index = resolveTileIndex(element)
     if (index === null) return
-    onTilePointerEnter(index)
+    onTilePointerEnter(index, pointerType)
   }
 
   return (
     <div
       className={styles.board}
       onPointerMove={(event) => {
-        handlePointerMoveAtPoint(event.clientX, event.clientY, event.target)
+        handlePointerMoveAtPoint(event.clientX, event.clientY, event.pointerType)
       }}
     >
       {rows.flat().map((letter, index) => {
@@ -126,6 +128,7 @@ export default function Board({
         const arrowClass = localArrowMap.get(index) || remoteArrowMap.get(index) || ''
         const showArrow = Boolean(arrowClass)
         const isRemoteArrow = !localArrowMap.get(index) && Boolean(remoteArrowMap.get(index))
+        const hasGem = (gemTileMap[index] || 0) > 0
 
         return (
           <button
@@ -140,7 +143,7 @@ export default function Board({
               onTilePointerDown(index, event.pointerId)
             }}
             onPointerEnter={() => {
-              onTilePointerEnter(index)
+              onTilePointerEnter(index, activeTouchPointerIdRef.current !== null ? 'touch' : 'mouse')
             }}
             onClick={() => {
               if (Date.now() < ignorePointerUntilRef.current) return
@@ -149,6 +152,11 @@ export default function Board({
             type="button"
           >
             <span className={styles.letter}>{letter.toUpperCase()}</span>
+            {hasGem && (
+              <span className={styles.gemBadge} aria-hidden="true">
+                {'\uD83D\uDC8E'}
+              </span>
+            )}
             {showArrow && (
               <span
                 className={[
