@@ -186,16 +186,17 @@ export default function LobbyScreen({ room, roomCode, uid }) {
         <div className={styles.categoryPicker}>
           {allCategories.map((cat) => {
             const active = selectedCategories.includes(cat)
-            const icon = cat === 'movies' ? '🎬' : cat === 'animals' ? '🐾' : '🌍'
+            const ICONS = { movies: '🎬', animals: '🐾', countries: '🌍', anime: '⚔️', catchphrases: '💬', pokemon: '⚡', music: '🎵', famous_people: '⭐', places: '🗺️', food: '🍔' }
+            const icon = ICONS[cat] || '❓'
             return (
               <button
                 key={cat}
                 className={[styles.categoryBtn, active ? styles.categoryActive : ''].join(' ')}
                 onClick={() => isHost && handleCategoryToggle(cat)}
                 disabled={!isHost || (active && selectedCategories.length <= 1)}
-                title={cat}
+                title={cat.replace('_', ' ')}
               >
-                {icon} {cat}
+                {icon} {cat.replace('_', ' ')}
               </button>
             )
           })}

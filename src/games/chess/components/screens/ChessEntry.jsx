@@ -3,15 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import CreateRoomForm from '../lobby/CreateRoomForm'
 import JoinRoomForm from '../lobby/JoinRoomForm'
-import styles from './HangmanEntry.module.css'
+import styles from './ChessEntry.module.css'
 
-export default function HangmanEntry() {
+export default function ChessEntry() {
   const { uid } = useAuth()
   const navigate = useNavigate()
-  const [view, setView] = useState('home') // 'home' | 'create' | 'join'
+  const [view, setView] = useState('home')
 
   function handleRoomReady(roomCode) {
-    navigate(`/room/${roomCode}`)
+    navigate(`/chess/room/${roomCode}`)
   }
 
   if (view === 'create') {
@@ -32,23 +32,26 @@ export default function HangmanEntry() {
 
   return (
     <div className={styles.page}>
-      <button className={styles.backBtn} onClick={() => navigate('/')}>← Back</button>
+      <button className={styles.backBtn} onClick={() => navigate('/')}>&#8592; Back</button>
 
       <div className={styles.hero}>
-        <span className={styles.icon}>🔤</span>
-        <h1 className={styles.title}>Not Hangman</h1>
+        <div className={styles.iconWrap}>
+          <span className={styles.icon}>&#9819;</span>
+        </div>
+        <h1 className={styles.title}>Not Chess</h1>
         <p className={styles.subtitle}>
-          The hangman game where your teammates choose your fate
+          Strategic chess on a compact 5&times;8 board. Outsmart your opponent in tight quarters!
         </p>
       </div>
 
       <div className={styles.rules}>
         <h2>How to play</h2>
         <ul>
-          <li>Guess a letter correctly → keep your turn</li>
-          <li>Guess wrong → pass to the next player</li>
-          <li>Guess the full word to score big</li>
-          <li>Solve a round to claim the bonus!</li>
+          <li>5-file, 8-rank board with King, Queen, Rook, Bishop, Knight &amp; 5 Pawns</li>
+          <li>Standard chess movement rules apply</li>
+          <li>No castling, no en passant</li>
+          <li>Pawns can promote at the last rank</li>
+          <li>Checkmate your opponent to win</li>
         </ul>
       </div>
 

@@ -5,7 +5,7 @@ import styles from './HomeScreen.module.css'
 const GAMES = [
   {
     id: 'hangman',
-    name: 'Hangman',
+    name: 'Not Hangman',
     description: 'Guess the word letter by letter. Correct guess keeps your turn!',
     icon: '🔤',
     path: '/hangman',
@@ -17,6 +17,14 @@ const GAMES = [
     description: 'Take turns revealing tiles. Hit a bomb and you\'re out!',
     icon: '\uD83D\uDCA3',
     path: '/mines',
+    available: true,
+  },
+  {
+    id: 'chess',
+    name: 'Not Chess',
+    description: 'Strategic chess on a compact 5\u00d78 board. Checkmate to win!',
+    icon: '\u265B',
+    path: '/chess',
     available: true,
   },
   {
