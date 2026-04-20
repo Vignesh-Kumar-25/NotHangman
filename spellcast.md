@@ -71,25 +71,26 @@ src/games/spellcast/
 - **Shuffle**: permutes existing letters and only accepts the result if the board still passes quality checks
 - **Swap**: replaces one chosen tile with one chosen letter and only accepts the result if the board remains valid
 - **Hint**: reveals an unused 4-letter word from the current board if one exists
-- **Gem economy**: each mage starts with 3 gems; `hint` and `swap` cost 2 gems each, and `shuffle` costs 1 gem
-- **Utility stocks**: each mage also has limited stock for `hint`, `shuffle`, and `swap`; using a utility spends both stock and gems
-- **Gem refresh**: every mage gains +3 gems every 5 rounds
-- **Turn timer**: any mage who is not currently taking the turn can trigger a free countdown bar for the active player once per turn; if it expires, the turn passes
+- **Gem economy**: each mage starts with 3 gems; `hint` and `swap` cost 3 gems each, and `shuffle` costs 2 gems
+- **Gem pickups**: 2 gem pickups are placed on fair rare-letter tiles on the board; collecting one with a cast grants +1 gem
+- **Utility stocks**: each utility is available once per turn, shown by the corner counter, and refreshes on turn handoff
+- **Automatic turn timer**: host configures a per-turn countdown (5-120s, default 30s) in the lobby; a system timer starts automatically at the beginning of each turn and passes play if it expires
+- **Turn timer power-up**: optionally enabled; any non-active mage can trigger a separate countdown against the active player once per turn (requires timer ≥ 20s, disabled when ≤ 15s remain)
 
 ## Firebase Data (`rooms/{roomCode}`)
 
 ```
 meta/
-  hostUid, createdAt, status, roomCode, gameType: 'spellcast', numRounds
+  hostUid, createdAt, status, roomCode, gameType: 'spellcast', numRounds, turnTimerSeconds, turnTimerPowerUpEnabled
 players/{uid}/
   uid, username, avatarId, joinedAt, connected, score, wordsFound
 playerOrder: [uid, ...]
 game/
-  state, startedAt, round, totalRounds, turnOrder, currentTurnIndex, turnUtilityUsage, gemBalances, utilityStocks, liveSelection
+  state, startedAt, round, totalRounds, turnTimerSeconds, turnTimerPowerUpEnabled, turnOrder, currentTurnIndex, turnUtilityUsage, gemBalances, utilityStocks, liveSelection
   turnTimer/
-    uid, turnUid, startedAt, endsAt
+    uid, turnUid, startedAt, endsAt, durationMs
   boardState/
-    version, rows, metrics, updatedAt
+    version, rows, gemTiles, metrics, updatedAt
   foundWords/{word}/
     uid, score, length, createdAt
   moves/{moveId}/
@@ -111,7 +112,9 @@ game/
 | `swapLetter(roomCode, uid, tileIndex, nextLetter, expectedVersion)` | Replace one tile with one chosen letter if the board stays accepted |
 | `useHint(roomCode, uid)` | Spend hint stock/gems and register hint usage for the turn |
 | `updateLiveSelection(roomCode, uid, path, boardVersion)` | Broadcast the active player's current traced path to other clients |
-| `triggerTurnTimer(roomCode, uid)` | Start the free countdown against the current active player |
+| `setRoomTurnTimer(roomCode, turnTimerSeconds)` | Update the lobby's turn timer duration |
+| `setTurnTimerPowerUpEnabled(roomCode, enabled)` | Toggle the turn timer power-up in the lobby |
+| `triggerTurnTimer(roomCode, uid)` | Start the power-up countdown against the current active player |
 | `expireTurnTimer(roomCode, turnUid, endedAt)` | Authoritatively expire the countdown and pass the turn |
 | `finishMatch(roomCode)` | Force the match to end immediately |
 | `returnToLobby(roomCode)` | Reset room back to `lobby` |
@@ -127,9 +130,9 @@ game/
 - **Board versioning**: submissions, shuffles, and swaps reject stale client state if the board has already changed
 - **Cast ends the turn**: a successful cast passes play to the next connected player
 - **Utility actions stay on turn**: shuffle, swap, and hint do not end your turn
-- **Utility limits**: hint, shuffle, and swap can each be used at most once per turn and only while you still have enough gems and remaining stock
-- **Gem refresh**: gems do not reset every round; instead, every mage gains +3 gems every 5 rounds
-- **Timer pressure**: the non-active players can trigger one free timer per turn; it is unavailable to the active player
+- **Utility limits**: hint, shuffle, and swap can each be used at most once per turn and only while you still have enough gems
+- **Automatic turn timer**: each turn has a configurable countdown (5-120s); when it expires, the turn passes automatically
+- **Timer power-up**: when enabled and timer ≥ 20s, non-active players can trigger a separate countdown; disabled when ≤ 15s remain on the current timer
 - **Rounds**: the host chooses 5-10 rounds, and the same evolving board carries through the full match
 - **Winning**: highest total score after the final round
 - **Player count**: 1-6 players supported
@@ -140,13 +143,14 @@ game/
 - **Drag-based selection** with click support and one-step undo by backtracking
 - **Live selection sharing**: non-active players can see the active player's current traced path in blue
 - **Path direction markers**: selected tiles show directional arrows for the traced path
-- **Large board actions** under the grid: `Cast`, `Clear Path`, `Hint`, `Shuffle`, `Swap`, and the spectator `Turn Timer`
+- **Large board actions** under the grid: `Cast`, `Clear Path`, `Hint`, `Shuffle`, `Swap`, and the optional `Turn Timer` power-up
+- **Board gem markers**: collectible gem badges appear on selected rare-letter tiles in the grid corners
 - **Swap overlay** with mobile-friendly A-Z picker
-- **Utility economy UI**: each utility button shows remaining stock plus gem cost
+- **Utility economy UI**: each utility button shows current-turn availability plus gem cost
 - **Recent-word feed** showing who cast what
 - **Leaderboard** showing score, found-word counts, and gem totals
 - **Top banner messaging** for casts, errors, shuffles, swaps, hints, timer starts, and timer expiries
-- **Turn timer bar** shown in the action-message area when spectators trigger the countdown
+- **Turn timer countdown** shown in the turn banner; flashes critical style when ≤ 10s remain
 - **Tile feedback**:
   - local selection uses green outlines
   - opponent live selection uses blue outlines

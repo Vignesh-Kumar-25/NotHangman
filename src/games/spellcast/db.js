@@ -13,13 +13,15 @@ import {
   GAME_STATES,
   MAX_PLAYERS,
   DEFAULT_NUM_ROUNDS,
-  GEM_REFRESH_INTERVAL,
+  DEFAULT_TURN_TIMER_SECONDS,
+  MIN_TURN_TIMER_POWER_UP_SECONDS,
+  TURN_TIMER_POWER_UP_DISABLE_THRESHOLD_SECONDS,
   DEFAULT_GEM_COUNT,
   DEFAULT_POWER_UP_COUNTS,
-  TURN_TIMER_DURATION_MS,
   POWER_UP_GEM_COSTS,
 } from './constants/gameConfig'
 import {
+  buildGemTiles,
   createAcceptedBoard,
   evaluateBoard,
   refillBoard,
@@ -50,6 +52,8 @@ export async function createRoom(uid, username, avatarId) {
       roomCode,
       gameType: 'spellcast',
       numRounds: DEFAULT_NUM_ROUNDS,
+      turnTimerSeconds: DEFAULT_TURN_TIMER_SECONDS,
+      turnTimerPowerUpEnabled: false,
     },
     players: {
       [uid]: {
@@ -182,8 +186,13 @@ export async function startGame(roomCode) {
 
   const room = snapshot.val()
   const totalRounds = room.meta?.numRounds ?? DEFAULT_NUM_ROUNDS
+  const turnTimerSeconds = room.meta?.turnTimerSeconds ?? DEFAULT_TURN_TIMER_SECONDS
+  const turnTimerPowerUpEnabled =
+    Boolean(room.meta?.turnTimerPowerUpEnabled) && turnTimerSeconds >= MIN_TURN_TIMER_POWER_UP_SECONDS
   const { rows, metrics } = createAcceptedBoard()
+  const gemTiles = buildGemTiles(rows)
   const now = Date.now()
+  const turnOrder = getConnectedPlayerOrder(room)
   const players = room.players || {}
   const playerUpdates = {}
 
@@ -199,16 +208,27 @@ export async function startGame(roomCode) {
       state: GAME_STATES.PLAYING,
       round: 1,
       totalRounds,
-      turnOrder: getConnectedPlayerOrder(room),
+      turnTimerSeconds,
+      turnTimerPowerUpEnabled,
+      turnOrder,
       currentTurnIndex: 0,
       turnUtilityUsage: {},
       gemBalances: buildGemBalances(players),
       utilityStocks: buildUtilityStocks(players),
       liveSelection: null,
-      turnTimer: null,
+      turnTimer: turnTimerSeconds > 0 && turnOrder.length > 0
+        ? {
+            uid: 'system',
+            turnUid: turnOrder[0],
+            startedAt: now,
+            endsAt: now + turnTimerSeconds * 1000,
+            durationMs: turnTimerSeconds * 1000,
+          }
+        : null,
       boardState: {
         version: 1,
         rows,
+        gemTiles,
         metrics: summarizeMetrics(metrics),
         updatedAt: now,
       },
@@ -274,11 +294,17 @@ export async function submitWord(roomCode, uid, path, expectedVersion) {
     const nextVersion = boardState.version + 1
     const now = Date.now()
     const points = scoreWord(word)
+    const gemsCollected = path.reduce((total, index) => total + (boardState.gemTiles?.[index] || 0), 0)
     const nextMetrics = summarizeMetrics(refill.metrics || evaluateBoard(refill.rows))
+    const nextGemTiles = buildGemTiles(refill.rows, boardState.gemTiles || {}, path)
 
     room.players[uid].score = (room.players[uid].score || 0) + points
     if (!room.players[uid].wordsFound) room.players[uid].wordsFound = {}
     room.players[uid].wordsFound[word] = now
+    if (!room.game.gemBalances) {
+      room.game.gemBalances = buildGemBalances(room.players || {})
+    }
+    room.game.gemBalances[uid] = (room.game.gemBalances[uid] || 0) + gemsCollected
 
     if (!room.game.foundWords) room.game.foundWords = {}
     room.game.foundWords[word] = {
@@ -306,6 +332,7 @@ export async function submitWord(roomCode, uid, path, expectedVersion) {
       score: points,
       path,
       refillWord: refill.refillWord,
+      gemsCollected,
       createdAt: now,
     }
     room.game.liveSelection = null
@@ -313,6 +340,7 @@ export async function submitWord(roomCode, uid, path, expectedVersion) {
     room.game.boardState = {
       version: nextVersion,
       rows: refill.rows,
+      gemTiles: nextGemTiles,
       metrics: nextMetrics,
       updatedAt: now,
     }
@@ -405,6 +433,11 @@ export async function reshuffleBoard(roomCode, uid, expectedVersion) {
     }
 
     const now = Date.now()
+    const nextGemTiles = buildGemTiles(
+      shuffled.rows,
+      boardState.gemTiles || {},
+      shuffled.rows.flat().map((_, index) => index),
+    )
     room.game.lastMove = {
       uid,
       action: 'shuffle',
@@ -417,6 +450,7 @@ export async function reshuffleBoard(roomCode, uid, expectedVersion) {
     room.game.boardState = {
       version: boardState.version + 1,
       rows: shuffled.rows,
+      gemTiles: nextGemTiles,
       metrics: summarizeMetrics(shuffled.metrics || evaluateBoard(shuffled.rows)),
       updatedAt: now,
     }
@@ -481,6 +515,13 @@ export async function swapLetter(roomCode, uid, tileIndex, nextLetter, expectedV
     }
 
     const now = Date.now()
+    const previousGemTiles = boardState.gemTiles || {}
+    const nextGemTiles = previousGemTiles[tileIndex]
+      ? {
+          ...buildGemTiles(swapped.rows, previousGemTiles, [tileIndex]),
+          [tileIndex]: previousGemTiles[tileIndex],
+        }
+      : buildGemTiles(swapped.rows, previousGemTiles, [tileIndex])
     room.game.lastMove = {
       uid,
       action: 'swap',
@@ -495,6 +536,7 @@ export async function swapLetter(roomCode, uid, tileIndex, nextLetter, expectedV
     room.game.boardState = {
       version: boardState.version + 1,
       rows: swapped.rows,
+      gemTiles: nextGemTiles,
       metrics: summarizeMetrics(swapped.metrics || evaluateBoard(swapped.rows)),
       updatedAt: now,
     }
@@ -576,6 +618,10 @@ export async function setRoomNumRounds(roomCode, numRounds) {
   await update(ref(db, `rooms/${roomCode}/meta`), { numRounds })
 }
 
+export async function setRoomTurnTimer(roomCode, turnTimerSeconds) {
+  await update(ref(db, `rooms/${roomCode}/meta`), { turnTimerSeconds })
+}
+
 export async function updateLiveSelection(roomCode, uid, path, boardVersion) {
   const roomRef = ref(db, `rooms/${roomCode}`)
   let rejection = 'Selection could not be updated'
@@ -645,21 +691,41 @@ export async function triggerTurnTimer(roomCode, uid) {
       rejection = 'No active turn'
       return
     }
+    const configuredTurnTimerSeconds = room.game?.turnTimerSeconds || room.meta?.turnTimerSeconds || DEFAULT_TURN_TIMER_SECONDS
+    const turnTimerPowerUpEnabled =
+      Boolean(room.game?.turnTimerPowerUpEnabled ?? room.meta?.turnTimerPowerUpEnabled) &&
+      configuredTurnTimerSeconds >= MIN_TURN_TIMER_POWER_UP_SECONDS
+    if (!turnTimerPowerUpEnabled) {
+      rejection = 'Turn timer is disabled for this match'
+      return
+    }
     if (turnState.currentTurnUid === uid) {
       rejection = 'You cannot time your own turn'
       return
     }
-    if (room.game?.turnTimer?.turnUid === turnState.currentTurnUid) {
+    const currentTimer = room.game?.turnTimer
+    const activeTurnAlreadyHasPlayerTriggeredTimer =
+      currentTimer?.turnUid === turnState.currentTurnUid && currentTimer?.uid && currentTimer.uid !== 'system'
+    if (activeTurnAlreadyHasPlayerTriggeredTimer) {
       rejection = 'Timer already started for this turn'
+      return
+    }
+    const currentRemainingMs = currentTimer?.turnUid === turnState.currentTurnUid
+      ? Math.max(0, (currentTimer.endsAt || 0) - Date.now())
+      : 0
+    if (currentRemainingMs <= TURN_TIMER_POWER_UP_DISABLE_THRESHOLD_SECONDS * 1000) {
+      rejection = 'Not enough time remains to trigger the timer'
       return
     }
 
     const now = Date.now()
+    const durationMs = 10 * 1000
     room.game.turnTimer = {
       uid,
       turnUid: turnState.currentTurnUid,
       startedAt: now,
-      endsAt: now + TURN_TIMER_DURATION_MS,
+      endsAt: now + durationMs,
+      durationMs,
     }
     room.game.lastMove = {
       uid,
@@ -699,7 +765,7 @@ export async function expireTurnTimer(roomCode, turnUid, endedAt) {
 
     const turnState = getTurnState(room)
     if (turnState.currentTurnUid !== turnUid) {
-      room.game.turnTimer = null
+      room.game.turnTimer = buildAutoTurnTimer(room)
       return room
     }
 
@@ -724,6 +790,10 @@ export async function expireTurnTimer(roomCode, turnUid, endedAt) {
   }
 }
 
+export async function setTurnTimerPowerUpEnabled(roomCode, turnTimerPowerUpEnabled) {
+  await update(ref(db, `rooms/${roomCode}/meta`), { turnTimerPowerUpEnabled })
+}
+
 function summarizeMetrics(metrics) {
   return {
     accepted: metrics.accepted,
@@ -731,6 +801,7 @@ function summarizeMetrics(metrics) {
     totalWords: metrics.totalWords,
     commonWords: metrics.commonWords,
     longestWord: metrics.longestWord,
+    longestWordText: metrics.longestWordText || '',
     vowelRatio: Number(metrics.vowelRatio.toFixed(2)),
     startCellCoverage: metrics.startCellCoverage,
     identicalNeighborCount: metrics.identicalNeighborCount,
@@ -790,8 +861,9 @@ function syncTurnState(room) {
   room.game.currentTurnIndex = Math.min(currentTurnIndex, activeTurnOrder.length - 1)
   if (previousTurnUid !== activeTurnOrder[room.game.currentTurnIndex]) {
     room.game.turnUtilityUsage = {}
+    resetUtilityStocks(room, activeTurnOrder)
     room.game.liveSelection = null
-    room.game.turnTimer = null
+    room.game.turnTimer = buildAutoTurnTimer(room)
   }
 }
 
@@ -813,8 +885,9 @@ function advanceTurn(room) {
     room.game.turnOrder = activeTurnOrder
     room.game.currentTurnIndex = currentTurnIndex + 1
     room.game.turnUtilityUsage = {}
+    resetUtilityStocks(room, activeTurnOrder)
     room.game.liveSelection = null
-    room.game.turnTimer = null
+    room.game.turnTimer = buildAutoTurnTimer(room)
     return
   }
 
@@ -848,10 +921,23 @@ function advanceRound(room, nextTurnOrder) {
   room.game.turnOrder = nextTurnOrder
   room.game.currentTurnIndex = 0
   room.game.turnUtilityUsage = {}
+  resetUtilityStocks(room, nextTurnOrder)
   room.game.liveSelection = null
-  room.game.turnTimer = null
-  if (shouldRefreshGems(nextRound)) {
-    grantRoundGems(room, nextTurnOrder, nextRound)
+  room.game.turnTimer = buildAutoTurnTimer(room)
+}
+
+function buildAutoTurnTimer(room) {
+  const seconds = room.game?.turnTimerSeconds || 0
+  if (seconds <= 0) return null
+  const { currentTurnUid } = getTurnState(room)
+  if (!currentTurnUid) return null
+  const now = Date.now()
+  return {
+    uid: 'system',
+    turnUid: currentTurnUid,
+    startedAt: now,
+    endsAt: now + seconds * 1000,
+    durationMs: seconds * 1000,
   }
 }
 
@@ -891,23 +977,12 @@ function spendGems(room, uid, amount) {
   room.game.gemBalances[uid] = Math.max(0, (room.game.gemBalances[uid] || 0) - amount)
 }
 
-function shouldRefreshGems(roundNumber) {
-  return roundNumber > 1 && (roundNumber - 1) % GEM_REFRESH_INTERVAL === 0
-}
-
-function grantRoundGems(room, playerOrder, roundNumber) {
-  if (!room.game.gemBalances) {
-    room.game.gemBalances = buildGemBalances(room.players || {})
+function resetUtilityStocks(room, playerOrder = []) {
+  if (!room.game.utilityStocks) {
+    room.game.utilityStocks = {}
   }
 
   playerOrder.forEach((playerId) => {
-    room.game.gemBalances[playerId] = (room.game.gemBalances[playerId] || 0) + DEFAULT_GEM_COUNT
+    room.game.utilityStocks[playerId] = { ...DEFAULT_POWER_UP_COUNTS }
   })
-
-  room.game.lastMove = {
-    action: 'gem_refill',
-    round: roundNumber,
-    amount: DEFAULT_GEM_COUNT,
-    createdAt: Date.now(),
-  }
 }

@@ -27,7 +27,12 @@ import {
   stopBgMusic,
 } from '../../utils/spellcastSounds'
 import { findHintWord, scoreWord } from '../../utils/boardUtils'
-import { POWER_UP_GEM_COSTS } from '../../constants/gameConfig'
+import {
+  MIN_TURN_TIMER_POWER_UP_SECONDS,
+  POWER_UP_GEM_COSTS,
+  SHOW_RUNE_FIELD_BOX,
+  TURN_TIMER_POWER_UP_DISABLE_THRESHOLD_SECONDS,
+} from '../../constants/gameConfig'
 import styles from './GameScreen.module.css'
 
 export default function GameScreen({ room, roomCode, uid }) {
@@ -65,6 +70,8 @@ export default function GameScreen({ room, roomCode, uid }) {
     turnUtilityUsage,
     liveSelection,
     turnTimer,
+    turnTimerSeconds,
+    turnTimerPowerUpEnabled,
     gemBalances,
     myGemBalance,
     myUtilityStock,
@@ -117,13 +124,15 @@ export default function GameScreen({ room, roomCode, uid }) {
       return `${playerName} used a hint.`
     }
     if (game.lastMove.action === 'turn_timer') {
-      return ''
+      const timedPlayerName = players[game.lastMove.turnUid]?.username || 'A mage'
+      return `${playerName} triggered a 10s timer on ${timedPlayerName}.`
     }
     if (game.lastMove.action === 'turn_timeout') {
       const timedPlayerName = players[game.lastMove.turnUid]?.username || 'A mage'
       return `${timedPlayerName}'s timer expired, turn passed.`
     }
-    return `${playerName} cast ${game.lastMove.word.toUpperCase()} for +${game.lastMove.score}.`
+    const gemSuffix = game.lastMove.gemsCollected ? ` and +${game.lastMove.gemsCollected} gems` : ''
+    return `${playerName} cast ${game.lastMove.word.toUpperCase()} for +${game.lastMove.score}${gemSuffix}.`
   }, [game?.lastMove, players])
   const turnLabel = currentWord
     ? `Tracing ${currentWord} (${selectedLength} letters)`
@@ -138,15 +147,28 @@ export default function GameScreen({ room, roomCode, uid }) {
   const timerTriggerName = turnTimer?.uid ? players[turnTimer.uid]?.username || 'A mage' : ''
   const timerRemainingMs = hasActiveTurnTimer ? Math.max(0, (turnTimer.endsAt || 0) - timerNow) : 0
   const showTurnTimer = hasActiveTurnTimer && timerRemainingMs > 0
+  const hasTriggeredTurnTimer = hasActiveTurnTimer && turnTimer?.uid && turnTimer.uid !== 'system'
+  const showTriggeredTurnTimer = hasTriggeredTurnTimer && timerRemainingMs > 0
   const timerProgress = hasActiveTurnTimer && turnTimer.startedAt && turnTimer.endsAt
     ? Math.max(0, Math.min(1, timerRemainingMs / Math.max(1, turnTimer.endsAt - turnTimer.startedAt)))
     : 0
+  const isTurnTimerCritical = showTriggeredTurnTimer && timerRemainingMs <= 10000
   const gemCount = myGemBalance || 0
   const hintCount = myUtilityStock?.hint || 0
   const shuffleCount = myUtilityStock?.shuffle || 0
   const swapCount = myUtilityStock?.swap || 0
+  const canUseTurnTimerPowerUp = turnTimerPowerUpEnabled && turnTimerSeconds >= MIN_TURN_TIMER_POWER_UP_SECONDS
+  const turnTimerPowerUpBlockedByRemainingTime =
+    hasActiveTurnTimer && timerRemainingMs < TURN_TIMER_POWER_UP_DISABLE_THRESHOLD_SECONDS * 1000
   const actionBannerText = error || status || lastMoveText
   const actionBannerTone = error ? styles.danger : status ? styles.safe : styles.warn
+
+  function formatTimerCountdown(ms) {
+    const totalSeconds = Math.max(0, Math.ceil(ms / 1000))
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    return `${minutes}:${String(seconds).padStart(2, '0')}`
+  }
 
   useEffect(() => () => clearTimeout(invalidTimerRef.current), [])
 
@@ -188,7 +210,7 @@ export default function GameScreen({ room, roomCode, uid }) {
     const requestKey = `${turnTimer.turnUid}-${turnTimer.endsAt}`
     if (timerExpiryRequestedRef.current === requestKey) return
     timerExpiryRequestedRef.current = requestKey
-    expireTurnTimer(roomCode, turnTimer.turnUid, turnTimer.endsAt).catch(() => {})
+    expireTurnTimer(roomCode, turnTimer.turnUid, turnTimer.endsAt).catch(() => { })
   }, [hasActiveTurnTimer, roomCode, timerRemainingMs, turnTimer?.endsAt, turnTimer?.turnUid])
 
   useEffect(() => {
@@ -239,7 +261,7 @@ export default function GameScreen({ room, roomCode, uid }) {
 
   useEffect(() => {
     if (!isMyTurn || !boardState) return
-    updateLiveSelection(roomCode, uid, path, boardState.version).catch(() => {})
+    updateLiveSelection(roomCode, uid, path, boardState.version).catch(() => { })
   }, [boardState?.version, isMyTurn, path, roomCode, uid])
 
   useEffect(() => {
@@ -255,10 +277,10 @@ export default function GameScreen({ room, roomCode, uid }) {
     handlePointerDown(index, pointerId)
   }
 
-  function handleBoardPointerEnter(index) {
+  function handleBoardPointerEnter(index, pointerType) {
     if (!isMyTurn || isBoardAnimating) return
     setHideLastMovePath(true)
-    handlePointerEnter(index)
+    handlePointerEnter(index, pointerType)
   }
 
   function handleBoardTileClick(index) {
@@ -346,7 +368,7 @@ export default function GameScreen({ room, roomCode, uid }) {
   }
 
   async function handleTurnTimer() {
-    if (isMyTurn || !currentTurnUid || hasActiveTurnTimer) return
+    if (isMyTurn || !currentTurnUid || hasTriggeredTurnTimer || !canUseTurnTimerPowerUp || turnTimerPowerUpBlockedByRemainingTime) return
     setError('')
     setStatus('')
 
@@ -404,7 +426,7 @@ export default function GameScreen({ room, roomCode, uid }) {
           <span className={styles.roomCodeSmall}>{roomCode}</span>
         </div>
         <div className={styles.stats}>
-          <span className={styles.stat}>Round {currentRound}/{totalRounds}</span>
+          <span className={`${styles.stat} ${styles.roundStat}`}>Round {currentRound}/{totalRounds}</span>
         </div>
         <div className={styles.topActions}>
           <button
@@ -431,19 +453,6 @@ export default function GameScreen({ room, roomCode, uid }) {
       </div>
 
       <div className={styles.actionMsgSlot}>
-        {showTurnTimer && (
-          <div className={styles.turnTimerCard}>
-            <div className={styles.turnTimerText}>
-              {timerTriggerName} started a timer for {timerTargetName}.
-            </div>
-            <div className={styles.turnTimerTrack}>
-              <div
-                className={styles.turnTimerFill}
-                style={{ transform: `scaleX(${timerProgress})` }}
-              />
-            </div>
-          </div>
-        )}
         {actionBannerText && (
           <div className={`${styles.actionMsg} ${actionBannerTone}`}>
             {actionBannerText}
@@ -451,10 +460,38 @@ export default function GameScreen({ room, roomCode, uid }) {
         )}
       </div>
 
+      {showTriggeredTurnTimer ? (
+        <div className={styles.turnTimerCard}>
+          <div className={styles.turnTimerRow}>
+            <span className={`${styles.turnCountdown} ${isTurnTimerCritical ? styles.turnCountdownCritical : ''}`}>
+              {formatTimerCountdown(timerRemainingMs)}
+            </span>
+          </div>
+          <div className={styles.turnTimerText}>
+            {`${timerTriggerName} triggered a timer on ${timerTargetName}`}
+          </div>
+          <div className={styles.turnTimerTrack}>
+            <div
+              className={styles.turnTimerFill}
+              style={{ transform: `scaleX(${timerProgress})` }}
+            />
+          </div>
+        </div>
+      ) : showTurnTimer ? (
+        <div className={styles.turnTimerRow}>
+          <span className={styles.turnCountdown}>
+            {formatTimerCountdown(timerRemainingMs)}
+          </span>
+        </div>
+      ) : (
+        <div />
+      )}
+
       <div className={styles.gameArea}>
         <div className={styles.boardCol}>
           <Board
             rows={displayRows}
+            gemTiles={boardState?.gemTiles}
             path={path}
             remotePath={remoteSelectionPath}
             invalidPath={invalidPath}
@@ -527,7 +564,7 @@ export default function GameScreen({ room, roomCode, uid }) {
             <button
               className={styles.utilityBtn}
               onClick={handleTurnTimer}
-              disabled={isMyTurn || !currentTurnUid || hasActiveTurnTimer}
+              disabled={isMyTurn || !currentTurnUid || hasTriggeredTurnTimer || !canUseTurnTimerPowerUp || turnTimerPowerUpBlockedByRemainingTime}
               aria-label="Turn Timer"
               title="Turn Timer"
               type="button"
@@ -543,25 +580,49 @@ export default function GameScreen({ room, roomCode, uid }) {
           <WordFeed foundWords={foundWords} players={players} />
         </div>
 
-        <div className={styles.metricsCard}>
-          <div className={styles.metricsTitle}>Rune Field</div>
-          <div className={styles.metricsGrid}>
-            <div className={styles.metric}>
-              <div className={styles.metricValue}>{metrics?.totalWords || 0}</div>
-              <div className={styles.metricLabel}>Words on board</div>
+        {SHOW_RUNE_FIELD_BOX && (
+          <div className={styles.metricsCard}>
+            <div className={styles.metricsTitle}>Rune Field</div>
+            <div className={styles.metricsGrid}>
+              <div className={styles.metric}>
+                <div className={styles.metricValue}>{metrics?.totalWords || 0}</div>
+                <div className={styles.metricLabel}>Words on board</div>
+              </div>
+              <div className={styles.metric}>
+                <div className={styles.metricValue}>{metrics?.longestWordText ? metrics.longestWordText.toUpperCase() : '-'}</div>
+                <div className={styles.metricLabel}>Longest word</div>
+              </div>
+              <div className={styles.metric}>
+                <div className={styles.metricValue}>{metrics?.startCellCoverage || 0}</div>
+                <div className={styles.metricLabel}>Start cell coverage</div>
+              </div>
+              <div className={styles.metric}>
+                <div className={styles.metricValue}>{Math.round((metrics?.vowelRatio || 0) * 100)}%</div>
+                <div className={styles.metricLabel}>Vowel ratio</div>
+              </div>
             </div>
-            <div className={styles.metric}>
-              <div className={styles.metricValue}>{metrics?.longestWord || 0}</div>
-              <div className={styles.metricLabel}>Longest word</div>
-            </div>
-            <div className={styles.metric}>
-              <div className={styles.metricValue}>{metrics?.startCellCoverage || 0}</div>
-              <div className={styles.metricLabel}>Start cell coverage</div>
-            </div>
-            <div className={styles.metric}>
-              <div className={styles.metricValue}>{Math.round((metrics?.vowelRatio || 0) * 100)}%</div>
-              <div className={styles.metricLabel}>Vowel ratio</div>
-            </div>
+          </div>
+        )}
+      </div>
+
+      <div className={styles.powerUpGuide}>
+        <div className={styles.powerUpGuideTitle}>Power-Ups</div>
+        <div className={styles.powerUpGuideList}>
+          <div className={styles.powerUpGuideItem}>
+            <span className={styles.powerUpGuideIcon}>{'\uD83D\uDCA1'}</span>
+            <span className={styles.powerUpGuideText}><strong>Hint:</strong> Reveals a word that you can find on the board.</span>
+          </div>
+          <div className={styles.powerUpGuideItem}>
+            <span className={styles.powerUpGuideIcon}>{'\uD83D\uDD00'}</span>
+            <span className={styles.powerUpGuideText}><strong>Shuffle:</strong> Mixes the current board into a new accepted layout.</span>
+          </div>
+          <div className={styles.powerUpGuideItem}>
+            <span className={styles.powerUpGuideIcon}>{'\uD83D\uDD04'}</span>
+            <span className={styles.powerUpGuideText}><strong>Swap:</strong> Replaces one selected tile with a letter of your choice.</span>
+          </div>
+          <div className={styles.powerUpGuideItem}>
+            <span className={styles.powerUpGuideIcon}>{'\u23F3'}</span>
+            <span className={styles.powerUpGuideText}><strong>Turn Timer:</strong> Puts the active player on a 10 second timer (WARNING: may rage-bait the opponent).</span>
           </div>
         </div>
       </div>
