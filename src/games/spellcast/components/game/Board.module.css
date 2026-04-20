@@ -30,6 +30,38 @@
   z-index: 1;
 }
 
+.gemBadge {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  z-index: 3;
+  display: inline-block;
+  color: #7dd3fc;
+  font-size: 1rem;
+  filter: drop-shadow(0 0 4px #38bdf8aa) drop-shadow(0 0 10px #38bdf866);
+  line-height: 1;
+  pointer-events: none;
+  animation: gemPulse 1.35s ease-in-out infinite;
+}
+
+@keyframes gemPulse {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.85;
+    filter: drop-shadow(0 0 4px #38bdf888) drop-shadow(0 0 8px #38bdf844);
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+    filter: drop-shadow(0 0 6px #67e8f9cc) drop-shadow(0 0 14px #38bdf899);
+  }
+  100% {
+    transform: scale(0.92);
+    opacity: 0.85;
+    filter: drop-shadow(0 0 4px #38bdf888) drop-shadow(0 0 8px #38bdf844);
+  }
+}
+
 .pathArrow {
   position: absolute;
   top: 50%;

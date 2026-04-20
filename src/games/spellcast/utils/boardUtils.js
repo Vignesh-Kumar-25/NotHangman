@@ -1,4 +1,4 @@
-import { BOARD_SIZE } from '../constants/gameConfig'
+import { BOARD_GEM_COUNT, BOARD_SIZE, GEM_TILE_VALUE } from '../constants/gameConfig'
 import WORD_DATA from '../data/words.json'
 
 const FULL_WORDS = WORD_DATA.full
@@ -6,6 +6,7 @@ const COMMON_WORDS = WORD_DATA.common
 
 const VOWELS = new Set(['a', 'e', 'i', 'o', 'u'])
 const LETTER_WEIGHTS = buildLetterWeights(FULL_WORDS)
+const LETTER_FREQUENCIES = buildLetterFrequencyMap(FULL_WORDS)
 
 const WORDS_BY_LENGTH = FULL_WORDS.reduce((map, word) => {
   if (!map[word.length]) map[word.length] = []
@@ -124,6 +125,16 @@ function buildLetterWeights(words) {
   })
 }
 
+function buildLetterFrequencyMap(words) {
+  const counts = {}
+  for (const word of words) {
+    for (const letter of word) {
+      counts[letter] = (counts[letter] || 0) + 1
+    }
+  }
+  return counts
+}
+
 function randomWeightedLetter() {
   const roll = Math.random()
   return LETTER_WEIGHTS.find((entry) => roll <= entry.threshold)?.letter || 'e'
@@ -217,6 +228,9 @@ export function evaluateBoard(rows) {
   const flat = flattenRows(rows)
   const vowelRatio = flat.filter((letter) => VOWELS.has(letter)).length / flat.length
   const longestWord = foundWords.reduce((max, word) => Math.max(max, word.length), 0)
+  const longestWordText = foundWords
+    .filter((word) => word.length === longestWord)
+    .sort((left, right) => left.localeCompare(right))[0] || ''
   const { identicalNeighborCount, denseClusterCount } = measureIdenticalNeighbors(rows)
   const failureTags = []
 
@@ -246,6 +260,7 @@ export function evaluateBoard(rows) {
     totalWords: foundWords.length,
     commonWords: commonWords.length,
     longestWord,
+    longestWordText,
     startCellCoverage: solved.startCells.size,
     vowelRatio,
     identicalNeighborCount,
@@ -253,6 +268,68 @@ export function evaluateBoard(rows) {
     failureTags,
     words: solved.words,
   }
+}
+
+function getGemEligibleIndices(rows) {
+  const flat = flattenRows(rows)
+  const uniqueLetters = [...new Set(flat)]
+  const rareLetterCount = Math.min(uniqueLetters.length, Math.max(4, Math.ceil(uniqueLetters.length / 3)))
+  const rareLetters = new Set(
+    uniqueLetters
+      .sort((left, right) => {
+        const leftCount = LETTER_FREQUENCIES[left] || Number.MAX_SAFE_INTEGER
+        const rightCount = LETTER_FREQUENCIES[right] || Number.MAX_SAFE_INTEGER
+        return leftCount - rightCount || left.localeCompare(right)
+      })
+      .slice(0, rareLetterCount),
+  )
+
+  return flat.reduce((indices, letter, index) => {
+    if (rareLetters.has(letter)) {
+      indices.push(index)
+    }
+    return indices
+  }, [])
+}
+
+function chooseGemIndices(candidates, lockedIndices = [], desiredCount = BOARD_GEM_COUNT) {
+  const chosen = [...lockedIndices]
+  const chosenSet = new Set(chosen)
+  const remaining = shuffle(candidates.filter((index) => !chosenSet.has(index)))
+
+  for (const index of remaining) {
+    if (chosen.length >= desiredCount) break
+    if (chosen.every((selected) => !areAdjacent(selected, index))) {
+      chosen.push(index)
+      chosenSet.add(index)
+    }
+  }
+
+  for (const index of remaining) {
+    if (chosen.length >= desiredCount) break
+    if (!chosenSet.has(index)) {
+      chosen.push(index)
+      chosenSet.add(index)
+    }
+  }
+
+  return chosen
+}
+
+export function buildGemTiles(rows, previousGemTiles = {}, changedIndices = [], desiredCount = BOARD_GEM_COUNT) {
+  const candidates = getGemEligibleIndices(rows)
+  const candidateSet = new Set(candidates)
+  const changedSet = new Set(changedIndices || [])
+  const lockedIndices = Object.entries(previousGemTiles || {})
+    .map(([index, value]) => ({ index: Number(index), value }))
+    .filter(({ index, value }) => Number.isInteger(index) && value > 0 && !changedSet.has(index) && candidateSet.has(index))
+    .map(({ index }) => index)
+
+  const chosen = chooseGemIndices(candidates, lockedIndices, desiredCount)
+  return chosen.reduce((tiles, index) => {
+    tiles[index] = GEM_TILE_VALUE
+    return tiles
+  }, {})
 }
 
 export function findHintWord(rows, usedWords = {}, length = 4) {
@@ -336,10 +413,10 @@ export function createAcceptedBoard() {
     const rows = toRows(flat)
     const metrics = evaluateBoard(rows)
     if (metrics.accepted) {
-      return { rows, metrics }
+      return { rows, metrics, gemTiles: buildGemTiles(rows) }
     }
     if (!best || metrics.score > best.metrics.score) {
-      best = { rows, metrics }
+      best = { rows, metrics, gemTiles: buildGemTiles(rows) }
     }
   }
 
@@ -352,7 +429,7 @@ export function createAcceptedBoard() {
     'g', 'i', 'c', 's', 'e',
     'g', 'l', 'o', 'w', 'n',
   ])
-  return { rows: fallback, metrics: evaluateBoard(fallback) }
+  return { rows: fallback, metrics: evaluateBoard(fallback), gemTiles: buildGemTiles(fallback) }
 }
 
 export function refillBoard(rows, path, usedWords = {}) {
@@ -426,6 +503,5 @@ export function swapBoardLetter(rows, index, nextLetter) {
   const nextRows = toRows(updated)
   const metrics = evaluateBoard(nextRows)
 
-  if (!metrics.accepted) return null
   return { rows: nextRows, metrics }
 }

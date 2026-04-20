@@ -26,9 +26,9 @@ export function useGameState(room, uid) {
       score: players[playerId]?.score || 0,
       foundCount: Object.keys(players[playerId]?.wordsFound || {}).length,
     }))
-    .sort((left, right) => right.score - left.score || left.joinedAt - right.joinedAt)
 
-  const winner = leaderboard[0] || null
+  const winner = [...leaderboard]
+    .sort((left, right) => right.score - left.score || left.joinedAt - right.joinedAt)[0] || null
   const currentRound = game.round || 1
   const totalRounds = game.totalRounds || meta.numRounds || DEFAULT_NUM_ROUNDS
   const currentTurnUid = turnOrder[game.currentTurnIndex || 0] || connectedPlayers[0] || null
@@ -37,6 +37,10 @@ export function useGameState(room, uid) {
   const turnUtilityUsage = game.turnUtilityUsage || {}
   const liveSelection = game.liveSelection || null
   const turnTimer = game.turnTimer || null
+  const turnTimerSeconds = game.turnTimerSeconds || meta.turnTimerSeconds || 0
+  const turnTimerPowerUpEnabled = Boolean(
+    game.turnTimerPowerUpEnabled ?? meta.turnTimerPowerUpEnabled
+  )
   const gemBalances = game.gemBalances || {}
   const utilityStocks = game.utilityStocks || {}
   const myGemBalance = gemBalances[uid] || 0
@@ -63,6 +67,8 @@ export function useGameState(room, uid) {
     turnUtilityUsage,
     liveSelection,
     turnTimer,
+    turnTimerSeconds,
+    turnTimerPowerUpEnabled,
     gemBalances,
     utilityStocks,
     myGemBalance,

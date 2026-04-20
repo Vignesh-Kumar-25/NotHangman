@@ -125,27 +125,60 @@
 .roundsPicker {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.roundsBtn {
+.optionBox {
   background: #0f182b;
   border: 1px solid #244560;
-  border-radius: var(--radius-sm);
-  width: 36px;
-  height: 36px;
+  border-radius: var(--radius-md);
+  min-width: 58px;
+  padding: 10px 14px;
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #e5eef8;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.optionBox:hover:not(:disabled) {
+  background: #1a2942;
+  border-color: #2d5b7c;
+}
+
+.optionBox:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.optionBoxActive {
+  background: linear-gradient(135deg, #1e3a34, #3b3113);
+  border-color: #fbbf24;
+  color: #fbbf24;
+  box-shadow: 0 0 0 1px #fbbf2440 inset;
+}
+
+.stepBtn {
+  background: #0f182b;
+  border: 1px solid #244560;
+  border-radius: var(--radius-md);
+  width: 44px;
+  height: 44px;
   font-size: 1.2rem;
   font-weight: 800;
   color: #e5eef8;
   cursor: pointer;
 }
 
-.roundsBtn:hover:not(:disabled) {
+.stepBtn:hover:not(:disabled) {
   background: #1a2942;
+  border-color: #2d5b7c;
 }
 
-.roundsBtn:disabled {
-  opacity: 0.35;
+.stepBtn:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
