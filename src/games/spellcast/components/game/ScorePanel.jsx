@@ -1,7 +1,7 @@
 import Avatar from '@/components/shared/Avatar'
 import styles from './ScorePanel.module.css'
 
-export default function ScorePanel({ leaderboard, activeUid, gemBalances }) {
+export default function ScorePanel({ leaderboard, activeUid, gemBalances, flashingGemUid }) {
   return (
     <div className={styles.panel}>
       <h2 className={styles.heading}>Mages</h2>
@@ -14,7 +14,14 @@ export default function ScorePanel({ leaderboard, activeUid, gemBalances }) {
           <div className={styles.meta}>
             <div className={styles.nameRow}>
               <span className={styles.name}>{player.username}</span>
-              <span className={styles.gems}>{'\uD83D\uDC8E'} {gemBalances?.[player.uid] || 0}</span>
+              <span
+                className={[
+                  styles.gems,
+                  flashingGemUid === player.uid ? styles.gemsFlash : '',
+                ].join(' ').trim()}
+              >
+                {'\uD83D\uDC8E'} {gemBalances?.[player.uid] || 0}
+              </span>
             </div>
             <span className={styles.sub}>{player.foundCount} words found</span>
           </div>

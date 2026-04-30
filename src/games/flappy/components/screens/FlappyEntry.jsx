@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
 import CreateRoomForm from '../lobby/CreateRoomForm'
 import JoinRoomForm from '../lobby/JoinRoomForm'
-import styles from './SpellcastEntry.module.css'
+import styles from './FlappyEntry.module.css'
 
-export default function SpellcastEntry({ uid }) {
+export default function FlappyEntry() {
+  const { uid } = useAuth()
   const navigate = useNavigate()
   const [view, setView] = useState('home')
 
   function handleRoomReady(roomCode) {
-    navigate(`/spellcast/room/${roomCode}`)
+    navigate(`/flappy/room/${roomCode}`)
   }
 
   if (view === 'create') {
@@ -34,21 +36,21 @@ export default function SpellcastEntry({ uid }) {
 
       <div className={styles.hero}>
         <div className={styles.iconWrap}>
-          <span className={styles.icon}>&#10024;</span>
+          <span className={styles.icon}>&#128038;</span>
         </div>
-        <h1 className={styles.title}>Not Spellcast</h1>
+        <h1 className={styles.title}>Not Flappy Bird</h1>
         <p className={styles.subtitle}>
-          Take turns tracing words on one shared rune field across 5 rounds. Casts rewrite only the path you used, so the board keeps evolving for the whole match.
+          Fly an endless pipe course side by side. Push for the highest score.
         </p>
       </div>
 
       <div className={styles.rules}>
         <h2>How to play <span className={styles.playerInfo}>(1-6 players)</span></h2>
         <ul>
-          <li>On your turn, drag across touching tiles to cast a word</li>
-          <li>Diagonal links are allowed, but you cannot reuse a tile in one cast</li>
-          <li>Only a successful cast ends your turn; hint, shuffle, and swap can each be used once per turn</li>
-          <li>Valid casts score points and refill only the consumed path, while the same board carries through all 5 rounds</li>
+          <li>Everyone flies through the same endless pipe layout at the same time</li>
+          <li>Press space, click, or tap your panel to flap</li>
+          <li>Your score is the number of pipes passed</li>
+          <li>If scores tie, the player who survived longer ranks higher</li>
         </ul>
       </div>
 

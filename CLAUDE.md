@@ -1,15 +1,15 @@
 # Party Games
 
-Multiplayer party games platform. Currently includes four games (Hangman, Not Minesweeper, Tron, Spellcast). Built with React + Vite, Firebase Realtime Database, deployed on Netlify. Tron uses Phaser for rendering.
+Multiplayer party games platform. Currently available games are Hangman, Not Minesweeper, Chess, Spellcast, and Not Flappy Bird. Built with React + Vite, Firebase Realtime Database, deployed on Netlify. Legacy Tron source still exists in the repo, but Tron routes currently redirect to the home screen.
 
 ## Core Features
 
-- **Room-based multiplayer**: 2-6 players per room via 6-character invite codes (Hangman caps at 5, Tron at 4, Not Minesweeper at 6)
+- **Room-based multiplayer**: 1-6 players per room via 6-character invite codes, depending on game rules (Hangman caps at 5, Chess at 2, Not Minesweeper, Spellcast, and Flappy at 6)
 - **Guest play**: Firebase Anonymous Authentication, no account needed
 - **In-game chat**: capped at 200 chars/message, last 50 messages loaded
-- **Avatars**: 5 SVG avatar choices per player
+- **Avatars**: SVG avatar choices per player
 - **Sound effects**: programmatic Web Audio API tones and background music via `soundManager.js`
-- **Games**: each game lives in `src/games/<name>/` with its own docs (Hangman - see `hangman.md`, Not Minesweeper - see `mines.md`, Tron - see `tron.md`, Spellcast - see `spellcast.md`)
+- **Games**: each game lives in `src/games/<name>/` with its own docs (Hangman - see `hangman.md`, Not Minesweeper - see `mines.md`, Chess - see `chess.md`, Spellcast - see `spellcast.md`, Flappy - see `flappy.md`)
 
 ## Architecture
 
@@ -22,7 +22,9 @@ Multiplayer party games platform. Currently includes four games (Hangman, Not Mi
 ### File Structure
 ```
 src/
-|-- App.jsx                          # Routes: / (home), /<game>, /room/:roomCode, /mines/room/:roomCode
+|-- App.jsx                          # Routes: /, /hangman, /room/:roomCode, /mines, /mines/room/:roomCode,
+|                                     # /chess, /chess/room/:roomCode, /spellcast, /spellcast/room/:roomCode,
+|                                     # /flappy, /flappy/room/:roomCode
 |-- main.jsx                         # Entry point, BrowserRouter
 |-- firebase/
 |   |-- config.js                    # Firebase init, reads VITE_FIREBASE_* env vars
@@ -39,7 +41,7 @@ src/
 |   |-- chat/                        # ChatPanel, ChatMessage, ChatInput
 |   `-- shared/                      # Avatar, AvatarPicker, Button, LoadingSpinner
 |-- constants/
-|   `-- avatars.js                   # Avatar definitions (5 SVGs in public/avatars/)
+|   `-- avatars.js                   # Avatar definitions (10 SVGs in public/avatars/)
 |-- utils/
 |   |-- roomCode.js                  # generateRoomCode, normalizeRoomCode
 |   `-- soundManager.js              # Web Audio API: playCorrect, playWrong, playRoundWin, bg music
@@ -60,19 +62,24 @@ src/
     |   |-- components/{screens,game,lobby}/
     |   |-- constants/
     |   `-- utils/
-    |-- tron/                        # See tron.md
+    |-- chess/                       # See chess.md
     |   |-- db.js
-    |   |-- engine/                  # GameEngine, Player, InputManager, collisions, Phaser scene
     |   |-- hooks/
     |   |-- components/{screens,game,lobby}/
     |   |-- constants/
     |   `-- utils/
-    `-- spellcast/                   # See spellcast.md
+    |-- spellcast/                   # See spellcast.md
+    |   |-- db.js
+    |   |-- hooks/
+    |   |-- components/{screens,game,lobby}/
+    |   |-- constants/
+    |   |-- data/
+    |   `-- utils/
+    `-- flappy/                      # See flappy.md
         |-- db.js
         |-- hooks/
         |-- components/{screens,game,lobby}/
         |-- constants/
-        |-- data/
         `-- utils/
 ```
 
@@ -96,7 +103,9 @@ Path alias: `@` -> `src/` (configured in `vite.config.js`).
 
 Games import platform code via `@/` alias. Platform code never imports from `src/games/`.
 
-Currently implemented: Hangman (see `hangman.md`), Not Minesweeper (see `mines.md`), Tron (see `tron.md`), Spellcast (see `spellcast.md`).
+Currently available: Hangman (see `hangman.md`), Not Minesweeper (see `mines.md`), Chess (see `chess.md`), Spellcast (see `spellcast.md`), Not Flappy Bird (see `flappy.md`).
+
+Legacy Tron code remains under `src/games/tron/`, but `/tron` and `/tron/room/:roomCode` currently redirect to `/`.
 
 
 ## Data Flow

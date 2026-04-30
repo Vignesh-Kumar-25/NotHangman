@@ -19,6 +19,7 @@ import { useBoardSelection } from '../../hooks/useBoardSelection'
 import { useGameState } from '../../hooks/useGameState'
 import {
   isMuted,
+  playGemCollect,
   playInvalidWord,
   playLetterSelect,
   playWordComplete,
@@ -48,11 +49,14 @@ export default function GameScreen({ room, roomCode, uid }) {
   const [displayRows, setDisplayRows] = useState([])
   const [castPreview, setCastPreview] = useState({ version: null, path: [], phase: null })
   const [timerNow, setTimerNow] = useState(() => Date.now())
+  const [flashingGemUid, setFlashingGemUid] = useState(null)
   const invalidTimerRef = useRef(null)
   const castTimersRef = useRef([])
+  const gemFlashTimerRef = useRef(null)
   const timerExpiryRequestedRef = useRef(null)
   const prevBoardStateRef = useRef(null)
   const prevLastMoveCreatedAtRef = useRef(null)
+  const prevGemCollectMoveRef = useRef(null)
   const prevPathLengthRef = useRef(0)
   const {
     boardState,
@@ -134,11 +138,6 @@ export default function GameScreen({ room, roomCode, uid }) {
     const gemSuffix = game.lastMove.gemsCollected ? ` and +${game.lastMove.gemsCollected} gems` : ''
     return `${playerName} cast ${game.lastMove.word.toUpperCase()} for +${game.lastMove.score}${gemSuffix}.`
   }, [game?.lastMove, players])
-  const turnLabel = currentWord
-    ? `Tracing ${currentWord} (${selectedLength} letters)`
-    : isMyTurn
-      ? 'Your turn. Drag across adjacent runes to build a word'
-      : `${currentPlayer?.username || 'Another mage'}'s turn`
   const hintUsedThisTurn = Boolean(turnUtilityUsage?.hint)
   const shuffleUsedThisTurn = Boolean(turnUtilityUsage?.shuffle)
   const swapUsedThisTurn = Boolean(turnUtilityUsage?.swap)
@@ -154,6 +153,7 @@ export default function GameScreen({ room, roomCode, uid }) {
     : 0
   const isTurnTimerCritical = showTriggeredTurnTimer && timerRemainingMs <= 10000
   const gemCount = myGemBalance || 0
+  const currentTurnGemCount = currentTurnUid ? (gemBalances?.[currentTurnUid] || 0) : 0
   const hintCount = myUtilityStock?.hint || 0
   const shuffleCount = myUtilityStock?.shuffle || 0
   const swapCount = myUtilityStock?.swap || 0
@@ -162,6 +162,7 @@ export default function GameScreen({ room, roomCode, uid }) {
     hasActiveTurnTimer && timerRemainingMs < TURN_TIMER_POWER_UP_DISABLE_THRESHOLD_SECONDS * 1000
   const actionBannerText = error || status || lastMoveText
   const actionBannerTone = error ? styles.danger : status ? styles.safe : styles.warn
+  const turnStatusLabel = isMyTurn ? 'Your turn' : `${currentPlayer?.username || 'Another mage'}'s turn`
 
   function formatTimerCountdown(ms) {
     const totalSeconds = Math.max(0, Math.ceil(ms / 1000))
@@ -175,6 +176,7 @@ export default function GameScreen({ room, roomCode, uid }) {
   useEffect(() => {
     return () => {
       castTimersRef.current.forEach(clearTimeout)
+      clearTimeout(gemFlashTimerRef.current)
     }
   }, [])
 
@@ -190,6 +192,21 @@ export default function GameScreen({ room, roomCode, uid }) {
     }
     prevPathLengthRef.current = path.length
   }, [path])
+
+  useEffect(() => {
+    const lastMove = game?.lastMove
+    const moveKey = lastMove?.createdAt || null
+    if (!lastMove || !moveKey) return
+    if (prevGemCollectMoveRef.current === moveKey) return
+
+    prevGemCollectMoveRef.current = moveKey
+    if (lastMove.action === 'cast' && lastMove.gemsCollected > 0) {
+      playGemCollect()
+      setFlashingGemUid(lastMove.uid)
+      clearTimeout(gemFlashTimerRef.current)
+      gemFlashTimerRef.current = setTimeout(() => setFlashingGemUid(null), 1300)
+    }
+  }, [game?.lastMove])
 
   useEffect(() => {
     if (!status.startsWith('Hint:') && !status.startsWith('No unused 4-letter hint')) return
@@ -446,9 +463,43 @@ export default function GameScreen({ room, roomCode, uid }) {
         </div>
       </div>
 
-      <div className={styles.turnBanner}>
-        <span className={[styles.turnText, currentWord ? styles.turnTextActive : ''].join(' ')}>
-          {turnLabel}
+      <div className={styles.turnStatusRow}>
+        <span className={[styles.turnSideLabel, isMyTurn ? styles.turnSideLabelActive : ''].join(' ').trim()}>
+          {turnStatusLabel}
+        </span>
+        <div className={styles.turnCenter}>
+          {showTriggeredTurnTimer ? (
+            <>
+              <div className={styles.turnTimerRow}>
+                <span className={`${styles.turnCountdown} ${isTurnTimerCritical ? styles.turnCountdownCritical : ''}`}>
+                  {formatTimerCountdown(timerRemainingMs)}
+                </span>
+              </div>
+              <div className={styles.turnTimerText}>
+                {`${timerTriggerName} triggered a timer on ${timerTargetName}`}
+              </div>
+              <div className={styles.turnTimerTrack}>
+                <div
+                  className={styles.turnTimerFill}
+                  style={{ transform: `scaleX(${timerProgress})` }}
+                />
+              </div>
+            </>
+          ) : showTurnTimer ? (
+            <div className={styles.turnTimerRow}>
+              <span className={styles.turnCountdown}>
+                {formatTimerCountdown(timerRemainingMs)}
+              </span>
+            </div>
+          ) : null}
+        </div>
+        <span
+          className={[
+            styles.turnGemCount,
+            flashingGemUid === currentTurnUid ? styles.turnGemCountFlash : '',
+          ].join(' ').trim()}
+        >
+          {'\uD83D\uDC8E'} {currentTurnGemCount}
         </span>
       </div>
 
@@ -459,33 +510,6 @@ export default function GameScreen({ room, roomCode, uid }) {
           </div>
         )}
       </div>
-
-      {showTriggeredTurnTimer ? (
-        <div className={styles.turnTimerCard}>
-          <div className={styles.turnTimerRow}>
-            <span className={`${styles.turnCountdown} ${isTurnTimerCritical ? styles.turnCountdownCritical : ''}`}>
-              {formatTimerCountdown(timerRemainingMs)}
-            </span>
-          </div>
-          <div className={styles.turnTimerText}>
-            {`${timerTriggerName} triggered a timer on ${timerTargetName}`}
-          </div>
-          <div className={styles.turnTimerTrack}>
-            <div
-              className={styles.turnTimerFill}
-              style={{ transform: `scaleX(${timerProgress})` }}
-            />
-          </div>
-        </div>
-      ) : showTurnTimer ? (
-        <div className={styles.turnTimerRow}>
-          <span className={styles.turnCountdown}>
-            {formatTimerCountdown(timerRemainingMs)}
-          </span>
-        </div>
-      ) : (
-        <div />
-      )}
 
       <div className={styles.gameArea}>
         <div className={styles.boardCol}>
@@ -576,7 +600,12 @@ export default function GameScreen({ room, roomCode, uid }) {
         </div>
 
         <div className={styles.sideCol}>
-          <ScorePanel leaderboard={leaderboard} activeUid={currentTurnUid} gemBalances={gemBalances} />
+          <ScorePanel
+            leaderboard={leaderboard}
+            activeUid={currentTurnUid}
+            gemBalances={gemBalances}
+            flashingGemUid={flashingGemUid}
+          />
           <WordFeed foundWords={foundWords} players={players} />
         </div>
 

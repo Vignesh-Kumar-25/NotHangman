@@ -45,7 +45,7 @@ export default function ChessEntry() {
       </div>
 
       <div className={styles.rules}>
-        <h2>How to play</h2>
+        <h2>How to play <span className={styles.playerInfo}>(2 players)</span></h2>
         <ul>
           <li>5-file, 8-rank board with King, Queen, Rook, Bishop, Knight &amp; 5 Pawns</li>
           <li>Standard chess movement rules apply</li>

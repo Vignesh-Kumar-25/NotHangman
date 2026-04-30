@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { revealTile, skipTurn, leaveRoom, startNextRound, finishMatch } from '../../db'
 import { useGameState } from '../../hooks/useGameState'
 import { GAME_STATES } from '../../constants/gameConfig'
-import { startBgMusic, stopBgMusic, playTileReveal, playExplosion, playButtonClick, playRoundWin, isMuted, setMuted } from '../../utils/minesSounds'
+import { startBgMusic, stopBgMusic, setBgMusicUrgency, playTileReveal, playExplosion, playButtonClick, playRoundWin, isMuted, setMuted } from '../../utils/minesSounds'
 import Board from '../game/Board'
 import PlayerPanel from '../game/PlayerPanel'
 import Avatar from '@/components/shared/Avatar'
@@ -35,10 +35,21 @@ export default function GameScreen({ room, roomCode, uid }) {
   const allSurvived = game.allSurvived || false
   const isFinalRound = currentRound >= totalRounds
 
-  // Background music
+  // Background music only during active play.
   useEffect(() => {
-    startBgMusic()
-    return () => stopBgMusic()
+    if (game.state === GAME_STATES.PLAYING && !explosionPopup) {
+      startBgMusic()
+    } else {
+      setBgMusicUrgency(0)
+      stopBgMusic()
+    }
+  }, [game.state, explosionPopup])
+
+  useEffect(() => {
+    return () => {
+      setBgMusicUrgency(0)
+      stopBgMusic()
+    }
   }, [])
 
   // Button click sounds for all buttons in the game container
@@ -132,6 +143,7 @@ export default function GameScreen({ room, roomCode, uid }) {
   }, [isMyTurn, clicking, amEliminated, roomCode, uid])
 
   async function handleLeave() {
+    setBgMusicUrgency(0)
     stopBgMusic()
     await leaveRoom(roomCode, uid)
     navigate('/mines')
@@ -290,6 +302,8 @@ export default function GameScreen({ room, roomCode, uid }) {
 function TurnTimer({ startedAt, limit }) {
   const [remaining, setRemaining] = useState(limit)
   const intervalRef = useRef(null)
+  const musicStartThreshold = 12
+  const musicCutoff = 3
 
   useEffect(() => {
     function tick() {
@@ -302,10 +316,31 @@ function TurnTimer({ startedAt, limit }) {
     return () => clearInterval(intervalRef.current)
   }, [startedAt, limit])
 
+  useEffect(() => {
+    if (limit <= 0) {
+      setBgMusicUrgency(0)
+      return
+    }
+    if (remaining > musicStartThreshold || remaining <= musicCutoff) {
+      setBgMusicUrgency(0)
+      return
+    }
+    setBgMusicUrgency(1)
+  }, [remaining, limit, musicStartThreshold, musicCutoff])
+
+  useEffect(() => {
+    return () => setBgMusicUrgency(0)
+  }, [])
+
+  const warning = remaining <= 10
   const urgent = remaining <= 5
 
   return (
-    <div className={`${styles.timerBar} ${urgent ? styles.timerBarUrgent : ''}`}>
+    <div className={[
+      styles.timerBar,
+      warning ? styles.timerBarWarning : '',
+      urgent ? styles.timerBarUrgent : '',
+    ].join(' ')}>
       <span className={styles.timerValue}>{remaining}s</span>
     </div>
   )

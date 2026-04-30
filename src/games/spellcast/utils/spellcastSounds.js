@@ -64,6 +64,12 @@ export function playInvalidWord() {
   playTone(190, 0.14, 'sawtooth', 0.12, 0.07)
 }
 
+export function playGemCollect() {
+  playTone(784, 0.08, 'triangle', 0.14, 0)
+  playTone(987.77, 0.09, 'sine', 0.1, 0.05)
+  playTone(1318.51, 0.12, 'triangle', 0.08, 0.11)
+}
+
 const BPM = 92
 const BEAT = 60 / BPM
 const EIGHTH = BEAT / 2

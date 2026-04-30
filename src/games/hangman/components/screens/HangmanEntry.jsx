@@ -43,7 +43,7 @@ export default function HangmanEntry() {
       </div>
 
       <div className={styles.rules}>
-        <h2>How to play</h2>
+        <h2>How to play <span className={styles.playerInfo}>(2-5 players)</span></h2>
         <ul>
           <li>Guess a letter correctly → keep your turn</li>
           <li>Guess wrong → pass to the next player</li>

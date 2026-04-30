@@ -45,7 +45,7 @@ export default function MinesEntry() {
       </div>
 
       <div className={styles.rules}>
-        <h2>How to play</h2>
+        <h2>How to play <span className={styles.playerInfo}>(1-6 players)</span></h2>
         <ul>
           <li>Play solo or take turns with other players clicking one tile each</li>
           <li>Safe tiles show the number of adjacent bombs</li>

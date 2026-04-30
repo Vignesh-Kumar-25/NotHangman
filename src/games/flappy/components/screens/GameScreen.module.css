@@ -1,0 +1,124 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 12px 80px;
+  gap: 12px;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1120px;
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.roomInfo,
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roomLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.roomCodeSmall {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: #22c55e;
+  letter-spacing: 0.1em;
+}
+
+.stat {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.leaveBtn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.leaveBtn:hover {
+  color: var(--accent-danger);
+  border-color: var(--accent-danger);
+}
+
+.turnBanner {
+  text-align: center;
+  min-height: 30px;
+}
+
+.turnText {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+}
+
+.turnTextActive {
+  color: #fbbf24;
+  text-shadow: 0 0 12px #fbbf2455;
+}
+
+.gameArea {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  max-width: 1120px;
+  align-items: flex-start;
+}
+
+.boardCol {
+  flex: 1;
+  min-width: 0;
+}
+
+.sideCol {
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.splitGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .gameArea {
+    flex-direction: column-reverse;
+  }
+
+  .sideCol {
+    width: 100%;
+  }
+
+  .topBar {
+    gap: 10px;
+  }
+
+  .stats {
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+}

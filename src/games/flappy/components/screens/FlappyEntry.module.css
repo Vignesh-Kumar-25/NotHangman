@@ -22,28 +22,36 @@
   transition: color 0.15s;
 }
 .backBtn:hover {
-  color: var(--accent-secondary);
+  color: #22c55e;
 }
 
 .hero {
   text-align: center;
 }
 
-.icon {
+.iconWrap {
   font-size: 3rem;
   display: block;
   margin-bottom: 8px;
+}
+
+.icon {
+  display: inline-block;
+  font-size: 3.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 12px #22c55e88);
 }
 
 .title {
   font-family: var(--font-display);
   font-size: clamp(2.5rem, 8vw, 4rem);
   line-height: 1;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  background: linear-gradient(135deg, #fbbf24, #22c55e);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: 12px;
+  text-shadow: none;
 }
 
 .subtitle {
@@ -80,13 +88,13 @@
 }
 
 .btnCreate {
-  background: var(--accent-primary);
-  color: #fff;
-  box-shadow: 0 4px 20px #7c3aed66;
+  background: #22c55e;
+  color: #0a0a1a;
+  box-shadow: 0 4px 20px #22c55e44;
 }
 .btnCreate:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px #7c3aed88;
+  box-shadow: 0 8px 28px #22c55e66;
 }
 
 .btnJoin {
@@ -95,8 +103,8 @@
   border: 2px solid var(--border);
 }
 .btnJoin:hover {
-  border-color: var(--accent-secondary);
-  color: var(--accent-secondary);
+  border-color: #fbbf24;
+  color: #fbbf24;
   transform: translateY(-2px);
 }
 
@@ -112,7 +120,7 @@
 .rules h2 {
   font-family: var(--font-display);
   font-size: 1.3rem;
-  color: var(--accent-secondary);
+  color: #22c55e;
   margin-bottom: 12px;
 }
 
@@ -131,8 +139,10 @@
 }
 
 .rules li::before {
-  content: '→';
+  content: '\25C6';
   position: absolute;
   left: 0;
-  color: var(--accent-primary);
+  color: #fbbf24;
+  font-size: 0.7rem;
+  top: 3px;
 }

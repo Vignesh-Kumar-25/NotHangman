@@ -62,10 +62,11 @@
 }
 
 .card {
+  position: relative;
   background: var(--bg-surface);
   border: 2px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 28px 20px 20px;
+  padding: 34px 20px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -74,6 +75,19 @@
   cursor: pointer;
   transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
   font-family: var(--font-body);
+}
+
+.playerRange {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  color: color-mix(in srgb, var(--text-secondary) 88%, #fff);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  opacity: 0.82;
+  pointer-events: none;
 }
 
 .card:hover:not(.cardDisabled) {
@@ -98,6 +112,10 @@
   text-shadow:
     0 0 10px rgba(255, 255, 255, 0.55),
     0 0 22px rgba(255, 255, 255, 0.28);
+}
+
+.cardIconFlappy {
+  filter: drop-shadow(0 0 12px #22c55e88);
 }
 
 .cardName {

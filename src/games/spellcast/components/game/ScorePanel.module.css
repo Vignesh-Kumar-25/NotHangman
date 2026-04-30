@@ -60,6 +60,14 @@
   color: #93c5fd;
 }
 
+.gemsFlash {
+  color: #e0f2fe;
+  text-shadow:
+    0 0 8px rgba(147, 197, 253, 0.85),
+    0 0 16px rgba(125, 211, 252, 0.3);
+  animation: gemPulse 0.55s ease-out 2;
+}
+
 .sub {
   font-size: 0.72rem;
   color: var(--text-secondary);
@@ -69,4 +77,19 @@
   font-family: var(--font-display);
   font-size: 1.1rem;
   color: #34d399;
+}
+
+@keyframes gemPulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  35% {
+    transform: scale(1.16);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }

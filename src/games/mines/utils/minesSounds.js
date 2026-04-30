@@ -123,7 +123,7 @@ export function playMatchWin() {
 // Progressive buildup in E minor at 150 BPM with beat drop
 
 const BPM = 150
-const EIGHTH = 60 / BPM / 2
+const URGENT_BPM = 190
 
 const MELODY = [
   [329.63, 1], [392.00, 1], [493.88, 1], [659.25, 1],
@@ -158,6 +158,12 @@ let bgActive = false
 let bgTimeout = null
 let bgGain = null
 let bgBarCount = 0
+let bgUrgency = 0
+
+function getEighthNoteDuration() {
+  const bpm = BPM + (URGENT_BPM - BPM) * bgUrgency
+  return 60 / bpm / 2
+}
 
 function scheduleKick(ac, gainNode, time, vol) {
   const osc = ac.createOscillator()
@@ -195,6 +201,7 @@ function scheduleSnare(ac, gainNode, time, vol) {
 function scheduleBgBar(startTime) {
   if (!bgActive || muted) return
   const ac = getCtx()
+  const eighth = getEighthNoteDuration()
   if (!bgGain) {
     bgGain = ac.createGain()
     bgGain.gain.value = 0.055
@@ -204,31 +211,50 @@ function scheduleBgBar(startTime) {
   const phase = bgBarCount % TOTAL_CYCLE
   const isDropped = phase >= BUILD_BARS
   const buildProgress = isDropped ? 1 : phase / BUILD_BARS
+  const urgentMix = bgUrgency
 
-  const melodyVol = isDropped ? 0.8 : 0.3 + buildProgress * 0.3
-  const melodyType = isDropped ? 'square' : 'sawtooth'
+  const melodyVol = (isDropped ? 0.8 : 0.3 + buildProgress * 0.3) + urgentMix * 0.12
+  const melodyType = urgentMix > 0.2 ? 'square' : isDropped ? 'square' : 'sawtooth'
 
   let mt = startTime
-  for (const [freq, eighths] of MELODY) {
-    const dur = eighths * EIGHTH
+  for (let i = 0; i < MELODY.length; i++) {
+    const [freq, eighths] = MELODY[i]
+    const dur = eighths * eighth
     const osc = ac.createOscillator()
     const env = ac.createGain()
     osc.connect(env)
     env.connect(bgGain)
     osc.type = melodyType
     osc.frequency.value = freq
+    osc.detune.value = urgentMix * -18
     env.gain.setValueAtTime(0, mt)
     env.gain.linearRampToValueAtTime(melodyVol, mt + 0.015)
     env.gain.linearRampToValueAtTime(0, mt + dur * 0.65)
     osc.start(mt)
     osc.stop(mt + dur)
+
+    if (urgentMix > 0.15 && i % 2 === 0) {
+      const shadow = ac.createOscillator()
+      const shadowEnv = ac.createGain()
+      shadow.connect(shadowEnv)
+      shadowEnv.connect(bgGain)
+      shadow.type = 'triangle'
+      shadow.frequency.value = freq * 0.5
+      shadow.detune.value = -8
+      shadowEnv.gain.setValueAtTime(0, mt)
+      shadowEnv.gain.linearRampToValueAtTime(0.1 + urgentMix * 0.16, mt + 0.01)
+      shadowEnv.gain.exponentialRampToValueAtTime(0.001, mt + dur * 0.9)
+      shadow.start(mt)
+      shadow.stop(mt + dur)
+    }
+
     mt += dur
   }
 
   if (isDropped) {
     let bt = startTime
     for (const [freq, eighths] of DROP_BASS) {
-      const dur = eighths * EIGHTH
+      const dur = eighths * eighth
       const osc = ac.createOscillator()
       const env = ac.createGain()
       osc.connect(env)
@@ -236,8 +262,8 @@ function scheduleBgBar(startTime) {
       osc.type = 'sawtooth'
       osc.frequency.value = freq
       env.gain.setValueAtTime(0, bt)
-      env.gain.linearRampToValueAtTime(1.2, bt + 0.01)
-      env.gain.linearRampToValueAtTime(0.6, bt + dur * 0.3)
+      env.gain.linearRampToValueAtTime(1.2 + urgentMix * 0.22, bt + 0.01)
+      env.gain.linearRampToValueAtTime(0.6 + urgentMix * 0.12, bt + dur * 0.3)
       env.gain.linearRampToValueAtTime(0, bt + dur * 0.85)
       osc.start(bt)
       osc.stop(bt + dur)
@@ -249,7 +275,7 @@ function scheduleBgBar(startTime) {
       sub.type = 'sine'
       sub.frequency.value = freq
       subEnv.gain.setValueAtTime(0, bt)
-      subEnv.gain.linearRampToValueAtTime(1.4, bt + 0.01)
+      subEnv.gain.linearRampToValueAtTime(1.4 + urgentMix * 0.18, bt + 0.01)
       subEnv.gain.exponentialRampToValueAtTime(0.001, bt + dur * 0.9)
       sub.start(bt)
       sub.stop(bt + dur)
@@ -257,33 +283,48 @@ function scheduleBgBar(startTime) {
       bt += dur
     }
 
-    const BEAT = EIGHTH * 2
+    const BEAT = eighth * 2
     for (let i = 0; i < 16; i++) {
-      scheduleKick(ac, bgGain, startTime + i * BEAT, 0.9)
+      scheduleKick(ac, bgGain, startTime + i * BEAT, 0.9 + urgentMix * 0.16)
       if (i % 2 === 1) {
-        scheduleSnare(ac, bgGain, startTime + i * BEAT, 0.5)
+        scheduleSnare(ac, bgGain, startTime + i * BEAT, 0.5 + urgentMix * 0.12)
       }
     }
 
     for (let i = 0; i < 32; i++) {
-      const ht = startTime + i * EIGHTH
-      const vol = i % 2 === 0 ? 0.18 : 0.3
+      const ht = startTime + i * eighth
+      const vol = (i % 2 === 0 ? 0.18 : 0.3) + urgentMix * 0.08
       const osc = ac.createOscillator()
       const env = ac.createGain()
       osc.connect(env)
       env.connect(bgGain)
       osc.type = 'square'
-      osc.frequency.value = 6000 + Math.random() * 2000
+      osc.frequency.value = 4400 + Math.random() * 1500
       env.gain.setValueAtTime(0, ht)
       env.gain.linearRampToValueAtTime(vol, ht + 0.002)
       env.gain.linearRampToValueAtTime(0, ht + 0.015)
       osc.start(ht)
       osc.stop(ht + 0.02)
+
+      if (urgentMix > 0.25 && i % 4 === 2) {
+        const stab = ac.createOscillator()
+        const stabEnv = ac.createGain()
+        stab.connect(stabEnv)
+        stabEnv.connect(bgGain)
+        stab.type = 'sawtooth'
+        stab.frequency.setValueAtTime(155, ht)
+        stab.frequency.exponentialRampToValueAtTime(90, ht + 0.05)
+        stabEnv.gain.setValueAtTime(0, ht)
+        stabEnv.gain.linearRampToValueAtTime(0.07 + urgentMix * 0.1, ht + 0.005)
+        stabEnv.gain.exponentialRampToValueAtTime(0.001, ht + 0.07)
+        stab.start(ht)
+        stab.stop(ht + 0.08)
+      }
     }
   } else {
     let bt = startTime
     for (const [freq, eighths] of BASS) {
-      const dur = eighths * EIGHTH
+      const dur = eighths * eighth
       const osc = ac.createOscillator()
       const env = ac.createGain()
       osc.connect(env)
@@ -300,7 +341,7 @@ function scheduleBgBar(startTime) {
     }
 
     for (let i = 0; i < 32; i += 2) {
-      const pt = startTime + (i + 1) * EIGHTH
+      const pt = startTime + (i + 1) * eighth
       const osc = ac.createOscillator()
       const env = ac.createGain()
       osc.connect(env)
@@ -316,7 +357,7 @@ function scheduleBgBar(startTime) {
     }
 
     if (phase === BUILD_BARS - 1) {
-      const riserLen = 32 * EIGHTH
+      const riserLen = 32 * eighth
       const riser = ac.createOscillator()
       const riserEnv = ac.createGain()
       riser.connect(riserEnv)
@@ -330,7 +371,7 @@ function scheduleBgBar(startTime) {
       riser.start(startTime)
       riser.stop(startTime + riserLen + 0.05)
 
-      const SIXTEENTH = EIGHTH / 2
+      const SIXTEENTH = eighth / 2
       for (let i = 24; i < 64; i++) {
         const st = startTime + i * SIXTEENTH
         scheduleSnare(ac, bgGain, st, 0.15 + (i - 24) * 0.008)
@@ -339,7 +380,7 @@ function scheduleBgBar(startTime) {
   }
 
   const totalEighths = MELODY.reduce((s, [, e]) => s + e, 0)
-  const barDur = totalEighths * EIGHTH
+  const barDur = totalEighths * eighth
   const msNext = (barDur - 0.1) * 1000
 
   bgBarCount++
@@ -363,6 +404,7 @@ export function stopBgMusic() {
   clearTimeout(bgTimeout)
   bgTimeout = null
   bgBarCount = 0
+  bgUrgency = 0
   if (bgGain) {
     try {
       const ac = getCtx()
@@ -394,6 +436,10 @@ export function setMuted(val) {
     const ac = getCtx()
     scheduleBgBar(ac.currentTime + 0.05)
   }
+}
+
+export function setBgMusicUrgency(value) {
+  bgUrgency = Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0))
 }
 
 export function isMuted() {

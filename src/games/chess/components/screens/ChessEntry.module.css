@@ -59,6 +59,13 @@
   margin-inline: auto;
 }
 
+.playerInfo {
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
 .actions {
   display: flex;
   gap: 16px;

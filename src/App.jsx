@@ -12,6 +12,8 @@ const ChessEntry = lazy(() => import('./games/chess/components/screens/ChessEntr
 const ChessRoomRoute = lazy(() => import('./games/chess/components/screens/ChessRoomRoute'))
 const SpellcastEntry = lazy(() => import('./games/spellcast/components/screens/SpellcastEntry'))
 const SpellcastRoomRoute = lazy(() => import('./games/spellcast/components/screens/SpellcastRoomRoute'))
+const FlappyEntry = lazy(() => import('./games/flappy/components/screens/FlappyEntry'))
+const FlappyRoomRoute = lazy(() => import('./games/flappy/components/screens/FlappyRoomRoute'))
 
 
 function Loading() {
@@ -39,6 +41,8 @@ export default function App() {
         <Route path="/chess/room/:roomCode" element={<ChessRoomRoute uid={uid} />} />
         <Route path="/spellcast" element={<SpellcastEntry uid={uid} />} />
         <Route path="/spellcast/room/:roomCode" element={<SpellcastRoomRoute uid={uid} />} />
+        <Route path="/flappy" element={<FlappyEntry />} />
+        <Route path="/flappy/room/:roomCode" element={<FlappyRoomRoute uid={uid} />} />
         <Route path="/tron" element={<Navigate to="/" replace />} />
         <Route path="/tron/room/:roomCode" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />

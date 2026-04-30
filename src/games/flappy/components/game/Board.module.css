@@ -1,0 +1,296 @@
+.course {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 420 / 520;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(#62c5ff 0%, #8bdcff 52%, #b8edff 73%, #74c85b 73%, #4aa246 100%);
+  box-shadow: var(--shadow-md);
+  padding: 0;
+  cursor: default;
+  contain: layout paint;
+}
+
+.myCourse {
+  cursor: pointer;
+  border-color: #22c55e;
+  box-shadow: 0 0 22px #22c55e33;
+}
+
+.crashed {
+  filter: saturate(0.65);
+}
+
+.skyline {
+  position: absolute;
+  inset: auto 0 19% 0;
+  height: 24%;
+  background: #5fba47;
+  clip-path: polygon(0 100%, 0 62%, 13% 42%, 28% 67%, 43% 33%, 62% 69%, 78% 38%, 100% 61%, 100% 100%);
+  opacity: 0.95;
+  z-index: 1;
+}
+
+.clouds {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.clouds span {
+  position: absolute;
+  width: 23%;
+  height: 7%;
+  background: #fff;
+  border-radius: 999px;
+}
+
+.clouds span::before,
+.clouds span::after {
+  content: '';
+  position: absolute;
+  bottom: 16%;
+  background: #fff;
+  border-radius: 50%;
+}
+
+.clouds span::before {
+  left: 16%;
+  width: 36%;
+  aspect-ratio: 1;
+}
+
+.clouds span::after {
+  right: 16%;
+  width: 44%;
+  aspect-ratio: 1;
+}
+
+.clouds span:first-child {
+  left: 11%;
+  top: 14%;
+}
+
+.clouds span:last-child {
+  right: 10%;
+  top: 23%;
+  width: 20%;
+}
+
+.hills {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10.4%;
+  height: 17%;
+  background: #86d85d;
+  clip-path: polygon(0 100%, 0 65%, 20% 30%, 39% 67%, 56% 18%, 79% 64%, 100% 36%, 100% 100%);
+  border-bottom: 4px solid #2f7d32;
+  z-index: 1;
+}
+
+.pipe {
+  position: absolute;
+  width: 15.2%;
+  background:
+    linear-gradient(90deg, var(--pipe-light), var(--pipe-base) 34%, var(--pipe-base) 68%, var(--pipe-dark));
+  border: 2px solid var(--pipe-border);
+  box-shadow: inset -7px 0 0 #00000022;
+  z-index: 2;
+  will-change: left, top, height;
+}
+
+.pipe::after {
+  content: '';
+  position: absolute;
+  left: -9%;
+  width: 118%;
+  height: 20px;
+  background:
+    linear-gradient(90deg, var(--pipe-light), var(--pipe-base) 42%, var(--pipe-dark));
+  border: 2px solid var(--pipe-border);
+  box-shadow: inset -6px 0 0 #0000001f;
+}
+
+.pipeTop {
+  top: -2px;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+.pipeTop::after {
+  bottom: -2px;
+  border-radius: 0 0 6px 6px;
+}
+
+.pipeBottom {
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.pipeBottom::after {
+  top: -2px;
+  border-radius: 6px 6px 0 0;
+}
+
+.ground {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 10.4%;
+  background:
+    linear-gradient(#91d25e 0 18%, #d6a657 18% 100%);
+  border-top: 4px solid #2f7d32;
+  z-index: 3;
+}
+
+.groundMotion {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 10.4%;
+  background:
+    linear-gradient(90deg, transparent 0 48%, #8b5a2b 48% 52%, transparent 52%),
+    linear-gradient(0deg, transparent 0 52%, #8b5a2b 52% 57%, transparent 57%);
+  background-size: 56px 100%, 56px 50%;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.bird {
+  position: absolute;
+  left: 21.9%;
+  width: 6.7%;
+  aspect-ratio: 1;
+  border-radius: 52% 48% 44% 56%;
+  border: 2px solid #0a0a1a;
+  box-shadow: 0 3px 0 #0005;
+  transition: filter 0.12s;
+  z-index: 4;
+  will-change: top, transform;
+}
+
+.birdFlap .wing {
+  animation: wingFlap 0.18s ease-out;
+}
+
+.wing {
+  position: absolute;
+  left: -22%;
+  top: 36%;
+  width: 64%;
+  height: 42%;
+  border-radius: 75% 25% 75% 25%;
+  background: linear-gradient(135deg, #fff7ed, #f9a8d4);
+  border: 2px solid #0a0a1a;
+  transform-origin: 88% 36%;
+  transform: rotate(22deg);
+  box-shadow: 0 2px 0 #0004;
+  z-index: -1;
+}
+
+.bird::before {
+  content: '';
+  position: absolute;
+  right: -34%;
+  top: 34%;
+  width: 48%;
+  height: 30%;
+  background: #f97316;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  border: 1px solid #0a0a1a;
+}
+
+.bird span {
+  position: absolute;
+  left: 52%;
+  top: 18%;
+  width: 21%;
+  aspect-ratio: 1;
+  background: #0a0a1a;
+  border-radius: 50%;
+}
+
+.hud {
+  position: absolute;
+  inset: 10px 12px auto 12px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.name,
+.score {
+  min-width: 0;
+  color: #fff;
+  font-weight: 900;
+  text-shadow:
+    0 2px 0 #0008,
+    0 0 10px #0f172a88;
+}
+
+.name {
+  position: absolute;
+  left: 0;
+  top: 2px;
+  max-width: 38%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(0.95rem, 3.4vw, 1.2rem);
+}
+
+.score {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 8vw, 3.5rem);
+  line-height: 1;
+  color: #fbbf24;
+  text-shadow:
+    0 3px 0 #92400e,
+    0 0 14px #fbbf2499,
+    0 0 2px #000;
+}
+
+.overlay,
+.crashLabel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: #0008;
+  z-index: 6;
+}
+
+.countdown {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  color: #fbbf24;
+  text-shadow: 0 0 18px #fbbf24aa;
+}
+
+.crashLabel span {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: #f87171;
+}
+
+.crashLabel strong {
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+@keyframes wingFlap {
+  0% { transform: rotate(22deg) translateY(0); }
+  45% { transform: rotate(-52deg) translateY(-4px); }
+  100% { transform: rotate(18deg) translateY(0); }
+}

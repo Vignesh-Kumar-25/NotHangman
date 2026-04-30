@@ -8,6 +8,7 @@ const GAMES = [
     name: 'Not Hangman',
     description: 'Guess the word letter by letter. Correct guess keeps your turn!',
     icon: '🔤',
+    players: '2-5 players',
     path: '/hangman',
     available: true,
   },
@@ -16,6 +17,7 @@ const GAMES = [
     name: 'Not Minesweeper',
     description: 'Take turns revealing tiles. Hit a bomb and you\'re out!',
     icon: '\uD83D\uDCA3',
+    players: '1-6 players',
     path: '/mines',
     available: true,
   },
@@ -25,6 +27,7 @@ const GAMES = [
     description: 'Strategic chess on a compact 5\u00d78 board. Checkmate to win!',
     icon: '\u265B',
     iconClassName: 'cardIconChess',
+    players: '2 players',
     path: '/chess',
     available: true,
   },
@@ -33,7 +36,18 @@ const GAMES = [
     name: 'Not Spellcast',
     description: 'Trace adjacent runes to cast words on a board that keeps rewriting itself.',
     icon: '\u2728',
+    players: '1-6 players',
     path: '/spellcast',
+    available: true,
+  },
+  {
+    id: 'flappy',
+    name: 'Not Flappy Bird',
+    description: 'Fly an endless pipe course side by side. Highest score wins!',
+    icon: '\uD83D\uDC26',
+    iconClassName: 'cardIconFlappy',
+    players: '1-6 players',
+    path: '/flappy',
     available: true,
   },
 ]
@@ -66,6 +80,7 @@ export default function HomeScreen() {
             onClick={() => game.available && navigate(game.path)}
             disabled={!game.available}
           >
+            <span className={styles.playerRange}>{game.players}</span>
             <span className={[styles.cardIcon, game.iconClassName ? styles[game.iconClassName] : ''].join(' ').trim()}>
               {game.icon}
             </span>

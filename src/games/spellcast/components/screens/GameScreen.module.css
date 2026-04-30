@@ -117,26 +117,57 @@
   border-color: #f59e0b;
 }
 
-.turnBanner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  text-align: center;
-  padding: 4px 0;
+.turnStatusRow {
+  width: min(100%, 720px);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 8px;
+  padding: 2px 0 4px;
 }
 
-.turnText {
+.turnSideLabel {
   font-family: var(--font-display);
   font-size: 1.1rem;
   color: var(--text-secondary);
+  line-height: 1.2;
+  align-self: center;
+  justify-self: end;
+  text-align: right;
 }
 
-.turnTextActive {
+.turnSideLabelActive {
   color: #34d399;
-  text-shadow: 0 0 12px #34d39955;
-  animation: pulseText 1.5s ease-in-out infinite alternate;
+  text-shadow:
+    0 0 10px rgba(52, 211, 153, 0.55),
+    0 0 18px rgba(52, 211, 153, 0.25);
+  animation: pulseText 1.35s ease-in-out infinite alternate;
+}
+
+.turnCenter {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.turnGemCount {
+  justify-self: start;
+  align-self: center;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #93c5fd;
+  line-height: 1.2;
+}
+
+.turnGemCountFlash {
+  color: #e0f2fe;
+  text-shadow:
+    0 0 8px rgba(147, 197, 253, 0.85),
+    0 0 16px rgba(125, 211, 252, 0.3);
+  animation: gemPulse 0.55s ease-out 2;
 }
 
 .turnCountdown {
@@ -154,13 +185,13 @@
   color: #ef4444;
   background: #ef44441f;
   border-color: #ef444466;
-  box-shadow: 0 0 12px #ef444433;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
 }
 
 .turnTimerRow {
   display: flex;
   justify-content: center;
-  padding: 2px 0 4px;
+  padding: 0;
 }
 
 .actionMsgSlot {
@@ -181,13 +212,6 @@
   animation: fadeSlideIn 0.3s ease-out;
   width: min(100%, 520px);
   text-align: center;
-}
-
-.turnTimerCard {
-  width: min(100%, 520px);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 .turnTimerText {
@@ -602,12 +626,22 @@
     flex-wrap: wrap;
   }
 
-  .turnBanner {
+  .turnStatusRow {
     width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 4px;
   }
 
-  .turnText {
+  .turnSideLabel {
     font-size: 0.95rem;
+    text-align: center;
+    justify-self: center;
+  }
+
+  .turnGemCount {
+    justify-self: center;
+    font-size: 0.92rem;
   }
 
   .actionMsgSlot {
@@ -621,10 +655,6 @@
     border-radius: var(--radius-md);
     padding: 6px 12px;
     font-size: 0.8rem;
-  }
-
-  .turnTimerCard {
-    width: 100%;
   }
 
   .gameArea {
@@ -750,6 +780,12 @@
 @keyframes pulseText {
   from { opacity: 0.7; }
   to { opacity: 1; }
+}
+
+@keyframes gemPulse {
+  0% { transform: scale(1); opacity: 1; }
+  35% { transform: scale(1.16); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 @keyframes fadeSlideIn {
